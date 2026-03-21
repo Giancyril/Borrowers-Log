@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+}
+
+enum ItemCategory {
+  EQUIPMENT
+  BOOKS
+  OFFICE_SUPPLIES
+  OTHER
+}
+
+enum BorrowStatus {
+  ACTIVE
+  RETURNED
+  OVERDUE
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      UserRole @default(ADMIN)
+  name      String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  approvedRequests BorrowRecord[] @relation("ProcessedBy")
+
+  @@map("users")
+}
+
+model Item {
+  id             String       @id @default(uuid())
+  name           String
+  category       ItemCategory
+  description    String       @default("")
+  totalQuantity  Int
+  conditionNotes String       @default("")
+  isDeleted      Boolean      @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  borrowRecords BorrowRecord[]
+
+  @@map("items")
+}
+
+model BorrowRecord {
+  id String @id @default(uuid())
+
+  // Item
+  itemId            String
+  item              Item   @relation(fields: [itemId], references: [id])
+  quantityBorrowed  Int
+
+  // Borrower info (entered by admin)
+  borrowerName       String
+  borrowerEmail      String  @default("")
+  borrowerDepartment String  @default("")
+  purpose            String  @default("")
+
+  // Dates
+  borrowDate       DateTime
+  dueDate          DateTime
+  actualReturnDate DateTime?
+
+  // Status
+  status BorrowStatus @default(ACTIVE)
+
+  // Condition
+  conditionOnBorrow String @default("")
+  conditionOnReturn String @default("")
+  damageNotes       String @default("")
+
+  // E-signatures (base64 PNG)
+  borrowSignature String @default("")
+  returnSignature String @default("")
+
+  // Admin who created/processed
+  processedById String?
+  processedBy   User?   @relation("ProcessedBy", fields: [processedById], references: [id])
+
+  // Soft delete
+  isDeleted Boolean   @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("borrowRecords")
+}
