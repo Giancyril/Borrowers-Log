@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { useGetBorrowRecordsQuery, useDeleteBorrowRecordMutation } from "../../redux/api/api";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  useGetBorrowRecordsQuery,
+  useDeleteBorrowRecordMutation,
+  useBulkReturnRecordsMutation,
+  useBulkDeleteRecordsMutation,
+} from "../../redux/api/api";
 import { toast } from "react-toastify";
-import { FaPlus, FaSearch, FaTrash, FaEye, FaClipboardList, FaTimes } from "react-icons/fa";
+import {
+  FaPlus, FaSearch, FaTrash, FaEye, FaClipboardList, FaTimes,
+  FaCheckSquare, FaSquare, FaUndo, FaDownload, FaUser,
+} from "react-icons/fa";
 import type { BorrowRecord, BorrowStatus } from "../../types/types";
 
 const STATUS_TABS = [
@@ -31,21 +39,80 @@ const fmt = (d: string) =>
 const daysOverdue = (due: string) =>
   Math.floor((Date.now() - new Date(due).getTime()) / 86400000);
 
+const exportCSV = (records: BorrowRecord[]) => {
+  const headers = [
+    "Borrower Name", "Email", "Department", "Item", "Qty",
+    "Borrow Date", "Due Date", "Return Date", "Status", "Purpose",
+    "Condition (Borrow)", "Condition (Return)", "Damage Notes",
+  ];
+  const rows = records.map(r => [
+    r.borrowerName, r.borrowerEmail, r.borrowerDepartment,
+    r.item?.name, r.quantityBorrowed,
+    fmt(r.borrowDate), fmt(r.dueDate),
+    r.actualReturnDate ? fmt(r.actualReturnDate) : "",
+    r.status, r.purpose,
+    r.conditionOnBorrow, r.conditionOnReturn, r.damageNotes,
+  ]);
+  const csv = [headers, ...rows]
+    .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `borrow-records-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 export default function BorrowRecordsPage() {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [page,   setPage]   = useState(1);
-  const [deleteRecord] = useDeleteBorrowRecordMutation();
+  const navigate = useNavigate();
+  const [search,   setSearch]   = useState("");
+  const [status,   setStatus]   = useState("");
+  const [page,     setPage]     = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const [deleteRecord]    = useDeleteBorrowRecordMutation();
+  const [bulkReturn, { isLoading: bulkReturning }] = useBulkReturnRecordsMutation();
+  const [bulkDelete, { isLoading: bulkDeleting  }] = useBulkDeleteRecordsMutation();
 
   const { data, isLoading } = useGetBorrowRecordsQuery({ search, status, page, limit: 12 });
   const records = (data?.data ?? []) as BorrowRecord[];
   const meta    = data?.meta;
+
+  const toggleSelect = (id: string) =>
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const toggleAll = () =>
+    setSelected(prev => prev.size === records.length ? new Set() : new Set(records.map(r => r.id)));
+
+  const clearSelection = () => setSelected(new Set());
 
   const handleDelete = async (r: BorrowRecord) => {
     if (!confirm(`Delete borrow record for "${r.borrowerName}"?`)) return;
     try { await deleteRecord(r.id).unwrap(); toast.success("Record deleted"); }
     catch (err: any) { toast.error(err?.data?.message ?? "Failed to delete"); }
   };
+
+  const handleBulkReturn = async () => {
+    if (!confirm(`Mark ${selected.size} record(s) as returned?`)) return;
+    try {
+      await bulkReturn({ ids: Array.from(selected) }).unwrap();
+      toast.success(`${selected.size} record(s) marked as returned`);
+      clearSelection();
+    } catch (err: any) { toast.error(err?.data?.message ?? "Bulk return failed"); }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Delete ${selected.size} record(s)? This cannot be undone.`)) return;
+    try {
+      await bulkDelete({ ids: Array.from(selected) }).unwrap();
+      toast.success(`${selected.size} record(s) deleted`);
+      clearSelection();
+    } catch (err: any) { toast.error(err?.data?.message ?? "Bulk delete failed"); }
+  };
+
+  const allOnPageSelected = records.length > 0 && records.every(r => selected.has(r.id));
 
   return (
     <div className="space-y-5">
@@ -58,11 +125,39 @@ export default function BorrowRecordsPage() {
             {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link to="/borrow-records/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20">
-          <FaPlus size={11} /> New Record
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportCSV(records)}
+            className="inline-flex items-center gap-2 px-3 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all">
+            <FaDownload size={11} /> Export CSV
+          </button>
+          <Link to="/borrow-records/new"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20">
+            <FaPlus size={11} /> New Record
+          </Link>
+        </div>
       </div>
+
+      {/* ── Bulk action bar ── */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-600/10 border border-blue-500/20 rounded-xl">
+          <span className="text-blue-300 text-sm font-semibold">{selected.size} selected</span>
+          <div className="flex items-center gap-2 ml-auto">
+            <button onClick={handleBulkReturn} disabled={bulkReturning}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/30 text-emerald-400 text-xs font-semibold rounded-lg transition-all disabled:opacity-50">
+              <FaUndo size={10} /> {bulkReturning ? "Processing..." : "Mark Returned"}
+            </button>
+            <button onClick={handleBulkDelete} disabled={bulkDeleting}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold rounded-lg transition-all disabled:opacity-50">
+              <FaTrash size={10} /> {bulkDeleting ? "Deleting..." : "Delete"}
+            </button>
+            <button onClick={clearSelection}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+              <FaTimes size={11} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Search + Tabs ── */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -93,8 +188,16 @@ export default function BorrowRecordsPage() {
       {/* ── Table ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
         <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-3 text-[10px] uppercase tracking-widest text-gray-600 font-semibold border-b border-white/5">
+          {/* Select all */}
+          <div className="col-span-1 flex items-center">
+            <button onClick={toggleAll} className="text-gray-500 hover:text-white transition-colors">
+              {allOnPageSelected
+                ? <FaCheckSquare size={14} className="text-blue-400" />
+                : <FaSquare size={14} />}
+            </button>
+          </div>
           <div className="col-span-3">Borrower</div>
-          <div className="col-span-3">Item</div>
+          <div className="col-span-2">Item</div>
           <div className="col-span-2">Borrow Date</div>
           <div className="col-span-2">Due Date</div>
           <div className="col-span-1">Status</div>
@@ -122,14 +225,29 @@ export default function BorrowRecordsPage() {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {records.map(r => (
-              <div key={r.id} className="group hover:bg-white/[0.02] transition-colors">
+              <div key={r.id} className={`group transition-colors ${selected.has(r.id) ? "bg-blue-500/5" : "hover:bg-white/[0.02]"}`}>
                 {/* Desktop */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 items-center px-5 py-3.5">
-                  <div className="col-span-3 min-w-0">
-                    <p className="text-white text-sm font-medium truncate group-hover:text-cyan-400 transition-colors">{r.borrowerName}</p>
-                    {r.borrowerDepartment && <p className="text-gray-500 text-xs truncate mt-0.5">{r.borrowerDepartment}</p>}
+                  <div className="col-span-1">
+                    <button onClick={() => toggleSelect(r.id)} className="text-gray-500 hover:text-blue-400 transition-colors">
+                      {selected.has(r.id)
+                        ? <FaCheckSquare size={14} className="text-blue-400" />
+                        : <FaSquare size={14} />}
+                    </button>
                   </div>
                   <div className="col-span-3 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => navigate(`/borrowers/${encodeURIComponent(r.borrowerName)}`)}
+                        className="text-white text-sm font-medium truncate hover:text-cyan-400 transition-colors text-left"
+                        title="View borrower history">
+                        {r.borrowerName}
+                      </button>
+                      <FaUser size={9} className="text-gray-600 group-hover:text-gray-500 shrink-0 transition-colors" />
+                    </div>
+                    {r.borrowerDepartment && <p className="text-gray-500 text-xs truncate mt-0.5">{r.borrowerDepartment}</p>}
+                  </div>
+                  <div className="col-span-2 min-w-0">
                     <p className="text-gray-300 text-sm truncate">{r.item?.name}</p>
                     <p className="text-gray-600 text-xs">×{r.quantityBorrowed}</p>
                   </div>
@@ -157,29 +275,40 @@ export default function BorrowRecordsPage() {
 
                 {/* Mobile */}
                 <div className="sm:hidden px-4 py-3.5">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2">
+                    <button onClick={() => toggleSelect(r.id)} className="text-gray-500 hover:text-blue-400 mt-0.5 shrink-0">
+                      {selected.has(r.id) ? <FaCheckSquare size={14} className="text-blue-400" /> : <FaSquare size={14} />}
+                    </button>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <p className="text-white text-sm font-semibold">{r.borrowerName}</p>
-                        <StatusBadge status={r.status} />
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                            <button
+                              onClick={() => navigate(`/borrowers/${encodeURIComponent(r.borrowerName)}`)}
+                              className="text-white text-sm font-semibold hover:text-cyan-400 transition-colors">
+                              {r.borrowerName}
+                            </button>
+                            <StatusBadge status={r.status} />
+                          </div>
+                          <p className="text-gray-400 text-xs">{r.item?.name} × {r.quantityBorrowed}</p>
+                          <div className="flex gap-3 mt-1">
+                            <p className="text-gray-600 text-[11px]">Borrowed: {fmt(r.borrowDate)}</p>
+                            <p className={`text-[11px] ${r.status === "OVERDUE" ? "text-red-400 font-semibold" : "text-gray-600"}`}>
+                              Due: {fmt(r.dueDate)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-1.5 shrink-0">
+                          <Link to={`/borrow-records/${r.id}`}
+                            className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                            <FaEye size={12} />
+                          </Link>
+                          <button onClick={() => handleDelete(r)}
+                            className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                            <FaTrash size={11} />
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-gray-400 text-xs">{r.item?.name} × {r.quantityBorrowed}</p>
-                      <div className="flex gap-3 mt-1">
-                        <p className="text-gray-600 text-[11px]">Borrowed: {fmt(r.borrowDate)}</p>
-                        <p className={`text-[11px] ${r.status === "OVERDUE" ? "text-red-400 font-semibold" : "text-gray-600"}`}>
-                          Due: {fmt(r.dueDate)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1.5 shrink-0">
-                      <Link to={`/borrow-records/${r.id}`}
-                        className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-                        <FaEye size={12} />
-                      </Link>
-                      <button onClick={() => handleDelete(r)}
-                        className="w-8 h-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
-                        <FaTrash size={11} />
-                      </button>
                     </div>
                   </div>
                 </div>
