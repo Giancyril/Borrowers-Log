@@ -16,7 +16,7 @@ import BorrowRecordDetail from "./pages/borrowRecords/BorrowRecordDetail";
 import NewBorrowRecord   from "./pages/borrowRecords/NewBorrowRecord";
 import OverduePage       from "./pages/borrowRecords/OverduePage";
 import SettingsPage      from "./pages/settings/SettingsPage";
-import BorrowerHistory   from "./pages/borrowers/BorrowerHistory";
+import BorrowerHistory   from "./pages/borrowerRecords/BorrowerHistory";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;

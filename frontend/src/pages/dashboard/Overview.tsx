@@ -26,7 +26,7 @@ export default function Overview() {
   const dueTomorrowCount = stats?.dueTomorrowCount ?? 0;
   const borrowsToday     = stats?.borrowsToday     ?? 0;
   const borrowsThisWeek  = stats?.borrowsThisWeek  ?? 0;
-  const topItems         = stats?.topItems         ?? [];
+  const topItems: { itemId: string; itemName: string; count: number }[] = stats?.topItems ?? [];
 
   const cards = [
     { label: "Total Items",         value: stats?.totalItems,      icon: FaBoxOpen,             color: "blue",    href: "/items"          },
@@ -213,19 +213,19 @@ export default function Overview() {
                 <h2 className="text-sm font-bold text-white">Most Borrowed</h2>
               </div>
               <div className="p-4 space-y-3">
-                {topItems.slice(0, 5).map((item, i) => (
-                  <div key={item.itemId}>
+                {topItems.slice(0, 5).map((topItem, i) => (
+                  <div key={topItem.itemId}>
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2 min-w-0">
                         <span className="text-[10px] font-bold text-gray-600 w-4 shrink-0">#{i + 1}</span>
-                        <p className="text-white text-xs font-medium truncate">{item.itemName}</p>
+                        <p className="text-white text-xs font-medium truncate">{topItem.itemName}</p>
                       </div>
-                      <span className="text-gray-400 text-[10px] font-bold shrink-0 ml-2">{item.count}×</span>
+                      <span className="text-gray-400 text-[10px] font-bold shrink-0 ml-2">{topItem.count}×</span>
                     </div>
                     <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all"
-                        style={{ width: `${(item.count / maxTopCount) * 100}%` }}
+                        style={{ width: `${(topItem.count / maxTopCount) * 100}%` }}
                       />
                     </div>
                   </div>
