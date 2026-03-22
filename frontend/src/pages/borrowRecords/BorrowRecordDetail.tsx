@@ -1,17 +1,16 @@
 import { useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import {
   useGetSingleBorrowRecordQuery,
   useReturnBorrowRecordMutation,
   useDeleteBorrowRecordMutation,
+  useUpdateBorrowRecordMutation,
 } from "../../redux/api/api";
 import { toast } from "react-toastify";
 import {
-  FaArrowLeft, FaUndo, FaDownload, FaTrash, FaTimes, FaEraser,
-  FaCheckCircle, FaExclamationTriangle,
+  FaArrowLeft, FaUndo, FaTrash, FaTimes, FaEraser,
+  FaCheckCircle, FaExclamationTriangle, FaEdit, FaPrint, FaUser,
 } from "react-icons/fa";
 import type { BorrowRecord } from "../../types/types";
 
@@ -30,6 +29,88 @@ const StatusBadge = ({ status }: { status: string }) => {
     </span>
   );
 };
+
+// ── Edit Modal ────────────────────────────────────────────────────────────────
+function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => void }) {
+  const [updateRecord, { isLoading }] = useUpdateBorrowRecordMutation();
+  const [form, setForm] = useState({
+    borrowerName: record.borrowerName,
+    borrowerEmail: record.borrowerEmail,
+    borrowerDepartment: record.borrowerDepartment,
+    purpose: record.purpose,
+    dueDate: record.dueDate?.slice(0, 10) ?? "",
+    quantityBorrowed: record.quantityBorrowed,
+  });
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateRecord({ id: record.id, ...form }).unwrap();
+      toast.success("Record updated");
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to update");
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[92vh] flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
+          <div>
+            <h3 className="text-sm font-bold text-white">Edit Borrow Record</h3>
+            <p className="text-gray-500 text-xs mt-0.5">Update borrower details & due date</p>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+            <FaTimes size={12} />
+          </button>
+        </div>
+        <form onSubmit={handleSave} className="p-5 space-y-3.5 overflow-y-auto">
+          {[
+            { label: "Borrower Name",   key: "borrowerName",       type: "text"   },
+            { label: "Email",           key: "borrowerEmail",      type: "email"  },
+            { label: "Department",      key: "borrowerDepartment", type: "text"   },
+            { label: "Purpose",         key: "purpose",            type: "text"   },
+          ].map(({ label, key, type }) => (
+            <div key={key}>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{label}</label>
+              <input
+                type={type}
+                value={(form as any)[key]}
+                onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </div>
+          ))}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Due Date</label>
+              <input type="date" value={form.dueDate}
+                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
+                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Quantity</label>
+              <input type="number" min={1} value={form.quantityBorrowed}
+                onChange={e => setForm(f => ({ ...f, quantityBorrowed: Number(e.target.value) }))}
+                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-400 text-xs font-medium rounded-xl transition-colors">
+              Cancel
+            </button>
+            <button type="submit" disabled={isLoading}
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all">
+              {isLoading ? "Saving..." : "Save Changes"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 // ── Return Modal ──────────────────────────────────────────────────────────────
 function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () => void }) {
@@ -57,7 +138,7 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
       <div className="bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[92vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div>
             <h3 className="text-sm font-bold text-white">Process Return</h3>
             <p className="text-gray-500 text-xs mt-0.5">{record.borrowerName} · {record.item?.name}</p>
@@ -66,7 +147,6 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
             <FaTimes size={12} />
           </button>
         </div>
-
         <div className="p-5 space-y-4 overflow-y-auto">
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Condition on Return</label>
@@ -80,7 +160,6 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
               placeholder="Describe any damage (leave blank if none)"
               className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
           </div>
-
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Return Signature *</label>
@@ -100,7 +179,6 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
             </div>
             <p className="text-gray-600 text-[10px] mt-1 text-center">Borrower draws return signature here</p>
           </div>
-
           <div className="flex gap-2 pt-1">
             <button onClick={onClose}
               className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-400 text-xs font-medium rounded-xl transition-colors">
@@ -117,136 +195,99 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
   );
 }
 
-// ── Slip for PDF ──────────────────────────────────────────────────────────────
-function BorrowSlip({ record }: { record: BorrowRecord }) {
-  return (
-    <div id="borrow-slip" className="bg-white text-gray-900 p-8 rounded-xl" style={{ width: 600, fontFamily: "Arial, sans-serif", fontSize: 13 }}>
-      {/* Header */}
-      <div style={{ borderBottom: "2px solid #1d4ed8", paddingBottom: 16, marginBottom: 20 }}>
-        <h2 style={{ margin: 0, fontSize: 18, fontWeight: "bold", color: "#1d4ed8" }}>NBSC SAS — Borrowers Log</h2>
-        <p style={{ margin: "4px 0 0", color: "#555", fontSize: 12 }}>Borrow Slip</p>
+// ── Print Slip ────────────────────────────────────────────────────────────────
+const printSlip = (record: BorrowRecord) => {
+  const w = window.open("", "_blank", "width=700,height=900");
+  if (!w) return;
+  w.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Borrow Slip — ${record.borrowerName}</title>
+      <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; font-size: 13px; color: #111; padding: 32px; }
+        h2 { font-size: 18px; font-weight: bold; color: #1d4ed8; }
+        .sub { color: #555; font-size: 12px; margin-top: 4px; }
+        .header { border-bottom: 2px solid #1d4ed8; padding-bottom: 14px; margin-bottom: 20px; }
+        .section-title { font-weight: bold; color: #1d4ed8; font-size: 11px; text-transform: uppercase;
+          letter-spacing: 1px; margin-bottom: 6px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        td { padding: 5px 8px; border: 1px solid #e5e7eb; }
+        td:first-child { font-weight: bold; width: 35%; background: #f9fafb; }
+        .sig-row { display: flex; gap: 24px; margin-top: 8px; }
+        .sig-box { flex: 1; }
+        .sig-box p { font-size: 11px; color: #555; margin-bottom: 6px; }
+        .sig-img { width: 100%; height: 80px; object-fit: contain; border: 1px solid #e5e7eb;
+          border-radius: 4px; background: #f9fafb; }
+        .sig-placeholder { height: 80px; border: 1px dashed #d1d5db; border-radius: 4px;
+          background: #f9fafb; display: flex; align-items: center; justify-content: center;
+          color: #9ca3af; font-size: 11px; }
+        .footer { margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 12px;
+          font-size: 11px; color: #9ca3af; text-align: center; }
+        @media print { body { padding: 16px; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>NBSC SAS — Borrowers Log</h2>
+        <p class="sub">Borrow Slip</p>
       </div>
-
-      {/* Borrower */}
-      <section style={{ marginBottom: 16 }}>
-        <p style={{ fontWeight: "bold", color: "#1d4ed8", marginBottom: 6, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Borrower Information</p>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <tbody>
-          {[
-            ["Name", record.borrowerName],
-            ["Email", record.borrowerEmail || "—"],
-            ["Department", record.borrowerDepartment || "—"],
-            ["Purpose", record.purpose || "—"],
-          ].map(([k, v]) => (
-            <tr key={k}>
-              <td style={{ padding: "4px 8px", border: "1px solid #e5e7eb", fontWeight: "bold", width: "35%", background: "#f9fafb" }}>{k}</td>
-              <td style={{ padding: "4px 8px", border: "1px solid #e5e7eb" }}>{v}</td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* Item */}
-      <section style={{ marginBottom: 16 }}>
-        <p style={{ fontWeight: "bold", color: "#1d4ed8", marginBottom: 6, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Item Details</p>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <tbody>
-          {[
-            ["Item", record.item?.name],
-            ["Quantity", String(record.quantityBorrowed)],
-            ["Condition on Borrow", record.conditionOnBorrow || "—"],
-          ].map(([k, v]) => (
-            <tr key={k}>
-              <td style={{ padding: "4px 8px", border: "1px solid #e5e7eb", fontWeight: "bold", width: "35%", background: "#f9fafb" }}>{k}</td>
-              <td style={{ padding: "4px 8px", border: "1px solid #e5e7eb" }}>{v}</td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* Dates */}
-      <section style={{ marginBottom: 16 }}>
-        <p style={{ fontWeight: "bold", color: "#1d4ed8", marginBottom: 6, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Dates</p>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <tbody>
-          {[
-            ["Borrow Date", fmt(record.borrowDate)],
-            ["Due Date", fmt(record.dueDate)],
-            ["Return Date", fmt(record.actualReturnDate)],
-            ["Condition on Return", record.conditionOnReturn || "—"],
-            ["Damage Notes", record.damageNotes || "None"],
-          ].map(([k, v]) => (
-            <tr key={k}>
-              <td style={{ padding: "4px 8px", border: "1px solid #e5e7eb", fontWeight: "bold", width: "35%", background: "#f9fafb" }}>{k}</td>
-              <td style={{ padding: "4px 8px", border: "1px solid #e5e7eb" }}>{v}</td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
-      </section>
-
-      {/* Signatures */}
-      <section>
-        <p style={{ fontWeight: "bold", color: "#1d4ed8", marginBottom: 10, fontSize: 11, textTransform: "uppercase", letterSpacing: 1 }}>Signatures</p>
-        <div style={{ display: "flex", gap: 24 }}>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>Borrow Signature</p>
-            {record.borrowSignature
-              ? <img src={record.borrowSignature} alt="Borrow sig" style={{ width: "100%", height: 80, objectFit: "contain", border: "1px solid #e5e7eb", borderRadius: 4, background: "#f9fafb" }} />
-              : <div style={{ height: 80, border: "1px solid #e5e7eb", borderRadius: 4, background: "#f9fafb" }} />
-            }
-          </div>
-          <div style={{ flex: 1 }}>
-            <p style={{ fontSize: 11, color: "#555", marginBottom: 6 }}>Return Signature</p>
-            {record.returnSignature
-              ? <img src={record.returnSignature} alt="Return sig" style={{ width: "100%", height: 80, objectFit: "contain", border: "1px solid #e5e7eb", borderRadius: 4, background: "#f9fafb" }} />
-              : <div style={{ height: 80, border: "1px dashed #d1d5db", borderRadius: 4, background: "#f9fafb", display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 11 }}>Not yet returned</div>
-            }
-          </div>
+      <p class="section-title">Borrower Information</p>
+      <table><tbody>
+        <tr><td>Name</td><td>${record.borrowerName}</td></tr>
+        <tr><td>Email</td><td>${record.borrowerEmail || "—"}</td></tr>
+        <tr><td>Department</td><td>${record.borrowerDepartment || "—"}</td></tr>
+        <tr><td>Purpose</td><td>${record.purpose || "—"}</td></tr>
+      </tbody></table>
+      <p class="section-title">Item Details</p>
+      <table><tbody>
+        <tr><td>Item</td><td>${record.item?.name}</td></tr>
+        <tr><td>Quantity</td><td>${record.quantityBorrowed}</td></tr>
+        <tr><td>Condition (Borrow)</td><td>${record.conditionOnBorrow || "—"}</td></tr>
+      </tbody></table>
+      <p class="section-title">Dates</p>
+      <table><tbody>
+        <tr><td>Borrow Date</td><td>${fmt(record.borrowDate)}</td></tr>
+        <tr><td>Due Date</td><td>${fmt(record.dueDate)}</td></tr>
+        <tr><td>Return Date</td><td>${fmt(record.actualReturnDate)}</td></tr>
+        <tr><td>Condition (Return)</td><td>${record.conditionOnReturn || "—"}</td></tr>
+        <tr><td>Damage Notes</td><td>${record.damageNotes || "None"}</td></tr>
+      </tbody></table>
+      <p class="section-title">Signatures</p>
+      <div class="sig-row">
+        <div class="sig-box">
+          <p>Borrow Signature</p>
+          ${record.borrowSignature
+            ? `<img class="sig-img" src="${record.borrowSignature}" />`
+            : `<div class="sig-placeholder">No signature</div>`}
         </div>
-      </section>
-
-      <div style={{ marginTop: 20, borderTop: "1px solid #e5e7eb", paddingTop: 12, fontSize: 11, color: "#9ca3af", textAlign: "center" }}>
-        National Baptist School of Caloocan · Student Affairs Office · Borrowers Log System
+        <div class="sig-box">
+          <p>Return Signature</p>
+          ${record.returnSignature
+            ? `<img class="sig-img" src="${record.returnSignature}" />`
+            : `<div class="sig-placeholder">Not yet returned</div>`}
+        </div>
       </div>
-    </div>
-  );
-}
+      <div class="footer">National Baptist School of Caloocan · Student Affairs Office · Borrowers Log System</div>
+      <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }</script>
+    </body>
+    </html>
+  `);
+  w.document.close();
+};
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function BorrowRecordDetail() {
-  const { id }     = useParams<{ id: string }>();
-  const navigate   = useNavigate();
-  const [showReturn,    setShowReturn]    = useState(false);
-  const [showSlip,      setShowSlip]      = useState(false);
-  const [downloading,   setDownloading]   = useState(false);
+  const { id }   = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [showReturn, setShowReturn] = useState(false);
+  const [showEdit,   setShowEdit]   = useState(false);
 
   const { data, isLoading, refetch } = useGetSingleBorrowRecordQuery(id!);
   const [deleteRecord] = useDeleteBorrowRecordMutation();
 
   const record = data?.data as BorrowRecord | undefined;
-
-  const downloadPDF = async () => {
-    setShowSlip(true);
-    await new Promise(r => setTimeout(r, 300));
-    setDownloading(true);
-    try {
-      const el = document.getElementById("borrow-slip");
-      if (!el) return;
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const w = pdf.internal.pageSize.getWidth();
-      const h = (canvas.height * w) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, w, h);
-      pdf.save(`borrow-slip-${record?.borrowerName ?? "record"}.pdf`);
-    } finally {
-      setDownloading(false);
-      setShowSlip(false);
-    }
-  };
 
   const handleDelete = async () => {
     if (!confirm("Delete this borrow record?")) return;
@@ -276,16 +317,8 @@ export default function BorrowRecordDetail() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      {showReturn && (
-        <ReturnModal record={record} onClose={() => { setShowReturn(false); refetch(); }} />
-      )}
-
-      {/* Hidden slip for PDF */}
-      {showSlip && (
-        <div className="fixed -top-[9999px] -left-[9999px]">
-          <BorrowSlip record={record} />
-        </div>
-      )}
+      {showReturn && <ReturnModal record={record} onClose={() => { setShowReturn(false); refetch(); }} />}
+      {showEdit   && <EditModal  record={record} onClose={() => { setShowEdit(false);   refetch(); }} />}
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -309,8 +342,13 @@ export default function BorrowRecordDetail() {
 
       {/* Borrower Info */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-white/5">
+        <div className="px-5 py-3.5 border-b border-white/5 flex items-center justify-between">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Borrower Information</h2>
+          <button
+            onClick={() => navigate(`/borrowers/${encodeURIComponent(record.borrowerName)}`)}
+            className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 text-xs font-medium transition-colors">
+            <FaUser size={10} /> View History
+          </button>
         </div>
         <div className="px-5 py-4 grid grid-cols-2 gap-4">
           {[
@@ -333,16 +371,16 @@ export default function BorrowRecordDetail() {
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Item & Dates</h2>
         </div>
         <div className="px-5 py-4 grid grid-cols-2 gap-4">
-          {[
-            ["Item",              record.item?.name],
-            ["Quantity",          String(record.quantityBorrowed)],
+          {([
+            ["Item",               record.item?.name],
+            ["Quantity",           String(record.quantityBorrowed)],
             ["Condition (Borrow)", record.conditionOnBorrow || "—"],
-            ["Borrow Date",       fmt(record.borrowDate)],
-            ["Due Date",          fmt(record.dueDate)],
-            ["Return Date",       fmt(record.actualReturnDate)],
+            ["Borrow Date",        fmt(record.borrowDate)],
+            ["Due Date",           fmt(record.dueDate)],
+            ["Return Date",        fmt(record.actualReturnDate)],
             ...(record.conditionOnReturn ? [["Condition (Return)", record.conditionOnReturn]] : []),
-            ...(record.damageNotes ? [["Damage Notes", record.damageNotes]] : []),
-          ].map(([k, v]) => (
+            ...(record.damageNotes      ? [["Damage Notes",        record.damageNotes]]       : []),
+          ] as [string, string][]).map(([k, v]) => (
             <div key={k}>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{k}</p>
               <p className="text-white text-sm mt-0.5">{v}</p>
@@ -381,12 +419,16 @@ export default function BorrowRecordDetail() {
         {canReturn && (
           <button onClick={() => setShowReturn(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all">
-            <FaCheckCircle size={13} /> Process Return
+            <FaUndo size={13} /> Process Return
           </button>
         )}
-        <button onClick={downloadPDF} disabled={downloading}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all disabled:opacity-50">
-          <FaDownload size={12} /> {downloading ? "Generating..." : "Download Slip"}
+        <button onClick={() => setShowEdit(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
+          <FaEdit size={12} /> Edit
+        </button>
+        <button onClick={() => printSlip(record)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
+          <FaPrint size={12} /> Print Slip
         </button>
         <button onClick={handleDelete}
           className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl transition-all ml-auto">
