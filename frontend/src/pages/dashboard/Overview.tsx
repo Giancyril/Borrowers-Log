@@ -54,10 +54,6 @@ export default function Overview() {
             <h2 className="text-white text-lg font-bold">Good to see you!</h2>
             <p className="text-gray-400 text-xs sm:text-sm mt-0.5">NBSC · SAS Office · Borrowers Log</p>
           </div>
-          <Link to="/borrow-records/new"
-            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shrink-0 whitespace-nowrap">
-            <FaPlus size={10} /> New Borrow
-          </Link>
         </div>
       </div>
 

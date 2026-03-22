@@ -39,18 +39,29 @@ export interface BorrowRecord {
 }
 
 export interface DashboardStats {
-  totalItems:      number;
-  activeRecords:   number;
-  overdueRecords:  number;
-  returnedRecords: number;
-  dueTodayCount:   number;
-  dueTomorrowCount: number;
-  borrowsToday:    number;
-  borrowsThisWeek: number;
-  topItems:        { itemId: string; itemName: string; count: number }[];
-  recentRecords:   (Pick<BorrowRecord, "id" | "borrowerName" | "status" | "createdAt"> & {
+  totalItems:           number;
+  activeRecords:        number;
+  overdueRecords:       number;
+  returnedRecords:      number;
+  dueTodayCount:        number;
+  dueTomorrowCount:     number;
+  borrowsToday:         number;
+  borrowsThisWeek:      number;
+  topItems:             { itemId: string; itemName: string; count: number }[];
+  recentRecords:        (Pick<BorrowRecord, "id" | "borrowerName" | "status" | "createdAt"> & {
     item: Pick<Item, "id" | "name">;
   })[];
+
+  // new analytics fields
+  avgBorrowDays:        number;
+  onTimeReturnCount:    number;
+  lateReturnCount:      number;
+  onTimeRate:           number;
+  longestActiveBorrow:  { borrowerName: string; itemName: string; days: number } | null;
+  borrowsPerDay:        { date: string; label: string; count: number }[];
+  departmentStats:      { department: string; count: number }[];
+  uniqueBorrowers:      number;
+  avgBorrowsPerPerson:  number;
 }
 
 export interface AdminUser {

@@ -63,8 +63,10 @@ const getRecords = async (query: Record<string, any>) => {
   const page   = Number(query.page)  || 1;
   const limit  = Number(query.limit) || 10;
   const skip   = (page - 1) * limit;
-  const status = query.status as string | undefined;
-  const search = query.search as string | undefined;
+  const status = query.status   as string | undefined;
+  const search = query.search   as string | undefined;
+  const dateFrom = query.dateFrom as string | undefined;
+  const dateTo   = query.dateTo   as string | undefined;
 
   const where: any = { isDeleted: false };
   if (status) where.status = status;
@@ -75,6 +77,12 @@ const getRecords = async (query: Record<string, any>) => {
       { purpose:       { contains: search, mode: "insensitive" } },
       { item: { name:  { contains: search, mode: "insensitive" } } },
     ];
+  }
+  if (dateFrom || dateTo) {
+    where.borrowDate = {
+      ...(dateFrom && { gte: new Date(dateFrom) }),
+      ...(dateTo   && { lte: new Date(new Date(dateTo).setHours(23, 59, 59)) }),
+    };
   }
 
   const [records, total] = await Promise.all([
@@ -159,9 +167,8 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
 
 // ── Bulk return ───────────────────────────────────────────────────────────────
 const bulkReturn = async (ids: string[]) => {
-  // Only return ACTIVE or OVERDUE records
   const eligible = await prisma.borrowRecord.findMany({
-    where: { id: { in: ids }, status: { in: ["ACTIVE", "OVERDUE"] }, isDeleted: false },
+    where:  { id: { in: ids }, status: { in: ["ACTIVE", "OVERDUE"] }, isDeleted: false },
     select: { id: true },
   });
   const eligibleIds = eligible.map(r => r.id);
@@ -235,6 +242,13 @@ const getStats = async () => {
   const dayAfter  = new Date(today); dayAfter.setDate(dayAfter.getDate() + 2);
   const weekStart = new Date(today); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
 
+  // Build last 7 days date ranges
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (6 - i));
+    return d;
+  });
+
   const [
     totalItems,
     activeRecords,
@@ -246,13 +260,17 @@ const getStats = async () => {
     borrowsThisWeek,
     recentRecords,
     topItemsRaw,
+    returnedRecordsRaw,
+    allActiveOverdue,
+    departmentRaw,
+    uniqueBorrowersRaw,
   ] = await Promise.all([
     prisma.item.count({ where: { isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "ACTIVE",   isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "OVERDUE",  isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "RETURNED", isDeleted: false } }),
 
-    // Due today — active/overdue records where dueDate falls today
+    // Due today
     prisma.borrowRecord.count({
       where: {
         isDeleted: false,
@@ -270,20 +288,14 @@ const getStats = async () => {
       },
     }),
 
-    // Borrows created today
+    // Borrows today
     prisma.borrowRecord.count({
-      where: {
-        isDeleted:  false,
-        createdAt:  { gte: today },
-      },
+      where: { isDeleted: false, createdAt: { gte: today } },
     }),
 
-    // Borrows created this week
+    // Borrows this week
     prisma.borrowRecord.count({
-      where: {
-        isDeleted: false,
-        createdAt: { gte: weekStart },
-      },
+      where: { isDeleted: false, createdAt: { gte: weekStart } },
     }),
 
     // Recent 5 records
@@ -294,7 +306,7 @@ const getStats = async () => {
       include: { item: { select: { id: true, name: true } } },
     }),
 
-    // Top borrowed items — group by itemId, count, order by count desc
+    // Top borrowed items
     prisma.borrowRecord.groupBy({
       by:      ["itemId"],
       where:   { isDeleted: false },
@@ -302,22 +314,128 @@ const getStats = async () => {
       orderBy: { _count: { itemId: "desc" } },
       take:    5,
     }),
+
+    // Returned records with dates for avg duration + on-time calc
+    prisma.borrowRecord.findMany({
+      where: {
+        isDeleted:        false,
+        status:           "RETURNED",
+        actualReturnDate: { not: null },
+      },
+      select: {
+        borrowDate:       true,
+        dueDate:          true,
+        actualReturnDate: true,
+      },
+    }),
+
+    // Active/overdue records for longest active borrow
+    prisma.borrowRecord.findMany({
+      where:   { isDeleted: false, status: { in: ["ACTIVE", "OVERDUE"] } },
+      orderBy: { borrowDate: "asc" },
+      take:    1,
+      select: {
+        borrowerName: true,
+        borrowDate:   true,
+        item:         { select: { name: true } },
+      },
+    }),
+
+    // Department breakdown
+    prisma.borrowRecord.groupBy({
+      by:      ["borrowerDepartment"],
+      where:   { isDeleted: false, borrowerDepartment: { not: "" } },
+      _count:  { borrowerDepartment: true },
+      orderBy: { _count: { borrowerDepartment: "desc" } },
+      take:    8,
+    }),
+
+    // Unique borrowers
+    prisma.borrowRecord.groupBy({
+      by:    ["borrowerName"],
+      where: { isDeleted: false },
+    }),
   ]);
 
-  // Resolve item names for top items
-  const topItemIds = topItemsRaw.map(t => t.itemId);
+  // ── Resolve top item names ──
+  const topItemIds     = topItemsRaw.map(t => t.itemId);
   const topItemDetails = await prisma.item.findMany({
     where:  { id: { in: topItemIds } },
     select: { id: true, name: true },
   });
-  const nameMap = Object.fromEntries(topItemDetails.map(i => [i.id, i.name]));
+  const nameMap  = Object.fromEntries(topItemDetails.map(i => [i.id, i.name]));
   const topItems = topItemsRaw.map(t => ({
     itemId:   t.itemId,
     itemName: nameMap[t.itemId] ?? "Unknown",
     count:    t._count.itemId,
   }));
 
+  // ── Average borrow duration (days) ──
+  const durations = returnedRecordsRaw
+    .filter(r => r.actualReturnDate)
+    .map(r => {
+      const ms = new Date(r.actualReturnDate!).getTime() - new Date(r.borrowDate).getTime();
+      return ms / 86400000;
+    });
+  const avgBorrowDays = durations.length > 0
+    ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+    : 0;
+
+  // ── On-time vs late returns ──
+  const onTimeReturnCount = returnedRecordsRaw.filter(r =>
+    r.actualReturnDate && new Date(r.actualReturnDate) <= new Date(r.dueDate)
+  ).length;
+  const lateReturnCount = returnedRecordsRaw.filter(r =>
+    r.actualReturnDate && new Date(r.actualReturnDate) > new Date(r.dueDate)
+  ).length;
+
+  // ── On-time return rate % ──
+  const totalReturned   = onTimeReturnCount + lateReturnCount;
+  const onTimeRate      = totalReturned > 0
+    ? Math.round((onTimeReturnCount / totalReturned) * 100)
+    : 0;
+
+  // ── Longest active borrow ──
+  const longestActiveBorrow = allActiveOverdue.length > 0 ? {
+    borrowerName: allActiveOverdue[0].borrowerName,
+    itemName:     allActiveOverdue[0].item?.name ?? "Unknown",
+    days:         Math.floor((now.getTime() - new Date(allActiveOverdue[0].borrowDate).getTime()) / 86400000),
+  } : null;
+
+  // ── Borrows per day (last 7 days) ──
+  const borrowsPerDay = await Promise.all(
+    last7Days.map(async (dayStart) => {
+      const dayEnd = new Date(dayStart);
+      dayEnd.setDate(dayEnd.getDate() + 1);
+      const count = await prisma.borrowRecord.count({
+        where: {
+          isDeleted: false,
+          createdAt: { gte: dayStart, lt: dayEnd },
+        },
+      });
+      return {
+        date:  dayStart.toISOString().slice(0, 10),
+        label: dayStart.toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric" }),
+        count,
+      };
+    })
+  );
+
+  // ── Department stats ──
+  const departmentStats = departmentRaw.map(d => ({
+    department: d.borrowerDepartment || "Unknown",
+    count:      d._count.borrowerDepartment,
+  }));
+
+  // ── Unique borrowers count ──
+  const uniqueBorrowers    = uniqueBorrowersRaw.length;
+  const repeatBorrowers    = uniqueBorrowersRaw.filter(async () => false).length; // placeholder
+  const avgBorrowsPerPerson = uniqueBorrowers > 0
+    ? Math.round(((activeRecords + overdueRecords + returnedRecords) / uniqueBorrowers) * 10) / 10
+    : 0;
+
   return {
+    // existing
     totalItems,
     activeRecords,
     overdueRecords,
@@ -328,6 +446,17 @@ const getStats = async () => {
     borrowsThisWeek,
     topItems,
     recentRecords,
+
+    // new analytics
+    avgBorrowDays,
+    onTimeReturnCount,
+    lateReturnCount,
+    onTimeRate,
+    longestActiveBorrow,
+    borrowsPerDay,
+    departmentStats,
+    uniqueBorrowers,
+    avgBorrowsPerPerson,
   };
 };
 
