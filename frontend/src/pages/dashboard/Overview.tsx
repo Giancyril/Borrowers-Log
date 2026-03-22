@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useGetDashboardStatsQuery } from "../../redux/api/api";
 import {
   FaBoxOpen, FaClipboardList, FaExclamationTriangle, FaCheckCircle,
-  FaPlus, FaArrowRight,
+  FaPlus, FaArrowRight, FaClock, FaCalendarDay, FaFire,
 } from "react-icons/fa";
 
 const StatusBadge = ({ status }: { status: string }) => {
@@ -22,6 +22,12 @@ export default function Overview() {
   const { data, isLoading } = useGetDashboardStatsQuery(undefined);
   const stats = data?.data;
 
+  const dueTodayCount    = stats?.dueTodayCount    ?? 0;
+  const dueTomorrowCount = stats?.dueTomorrowCount ?? 0;
+  const borrowsToday     = stats?.borrowsToday     ?? 0;
+  const borrowsThisWeek  = stats?.borrowsThisWeek  ?? 0;
+  const topItems         = stats?.topItems         ?? [];
+
   const cards = [
     { label: "Total Items",         value: stats?.totalItems,      icon: FaBoxOpen,             color: "blue",    href: "/items"          },
     { label: "Active Borrows",      value: stats?.activeRecords,   icon: FaClipboardList,       color: "cyan",    href: "/borrow-records" },
@@ -36,18 +42,56 @@ export default function Overview() {
     emerald: { icon: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400", arrow: "text-emerald-500/40 group-hover:text-emerald-400" },
   };
 
+  const maxTopCount = topItems[0]?.count ?? 1;
+
   return (
     <div className="space-y-6">
 
       {/* ── Welcome banner ── */}
-<div className="bg-gray-900 border border-white/5 rounded-2xl px-5 py-5">
-  <div className="flex items-center justify-between gap-3">
-    <div className="min-w-0">
-      <h2 className="text-white text-lg font-bold">Good to see you!</h2>
-      <p className="text-gray-400 text-xs sm:text-sm mt-0.5">NBSC · SAS Office · Borrowers Log</p>
-    </div>
-  </div>
-</div>
+      <div className="bg-gray-900 border border-white/5 rounded-2xl px-5 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-white text-lg font-bold">Good to see you!</h2>
+            <p className="text-gray-400 text-xs sm:text-sm mt-0.5">NBSC · SAS Office · Borrowers Log</p>
+          </div>
+          <Link to="/borrow-records/new"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shrink-0 whitespace-nowrap">
+            <FaPlus size={10} /> New Borrow
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Due date warning banners ── */}
+      {(dueTodayCount > 0 || dueTomorrowCount > 0) && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          {dueTodayCount > 0 && (
+            <Link to="/borrow-records?status=ACTIVE"
+              className="flex-1 flex items-center gap-3 px-4 py-3 bg-red-500/8 border border-red-500/25 rounded-xl hover:bg-red-500/12 transition-all group">
+              <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center shrink-0">
+                <FaClock size={13} className="text-red-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-red-300 text-xs font-bold">{dueTodayCount} item{dueTodayCount !== 1 ? "s" : ""} due TODAY</p>
+                <p className="text-red-500/70 text-[10px]">Must be returned today</p>
+              </div>
+              <FaArrowRight size={10} className="text-red-500/40 group-hover:text-red-400 transition-colors shrink-0" />
+            </Link>
+          )}
+          {dueTomorrowCount > 0 && (
+            <Link to="/borrow-records?status=ACTIVE"
+              className="flex-1 flex items-center gap-3 px-4 py-3 bg-amber-500/8 border border-amber-500/25 rounded-xl hover:bg-amber-500/12 transition-all group">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
+                <FaCalendarDay size={13} className="text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-amber-300 text-xs font-bold">{dueTomorrowCount} item{dueTomorrowCount !== 1 ? "s" : ""} due TOMORROW</p>
+                <p className="text-amber-500/70 text-[10px]">Remind borrowers today</p>
+              </div>
+              <FaArrowRight size={10} className="text-amber-500/40 group-hover:text-amber-400 transition-colors shrink-0" />
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -68,6 +112,30 @@ export default function Overview() {
             <p className="text-gray-500 text-xs mt-1">{label}</p>
           </Link>
         ))}
+      </div>
+
+      {/* ── This week's activity ── */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-gray-900 border border-white/5 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <FaCalendarDay size={12} className="text-cyan-400" />
+            <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest">Today</p>
+          </div>
+          <p className="text-3xl font-black text-white">
+            {isLoading ? <span className="inline-block w-10 h-7 bg-gray-800 rounded animate-pulse" /> : borrowsToday}
+          </p>
+          <p className="text-gray-500 text-xs mt-1">New borrows today</p>
+        </div>
+        <div className="bg-gray-900 border border-white/5 rounded-2xl p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <FaFire size={12} className="text-orange-400" />
+            <p className="text-gray-500 text-xs font-semibold uppercase tracking-widest">This Week</p>
+          </div>
+          <p className="text-3xl font-black text-white">
+            {isLoading ? <span className="inline-block w-10 h-7 bg-gray-800 rounded animate-pulse" /> : borrowsThisWeek}
+          </p>
+          <p className="text-gray-500 text-xs mt-1">Borrows this week</p>
+        </div>
       </div>
 
       {/* ── Bottom row ── */}
@@ -119,8 +187,9 @@ export default function Overview() {
           )}
         </div>
 
-        {/* Quick actions */}
+        {/* Right column */}
         <div className="space-y-4">
+
           {/* Overdue alert */}
           {(stats?.overdueRecords ?? 0) > 0 && (
             <Link to="/overdue"
@@ -136,7 +205,36 @@ export default function Overview() {
             </Link>
           )}
 
-          {/* Quick links */}
+          {/* Most borrowed items */}
+          {topItems.length > 0 && (
+            <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
+                <FaFire size={12} className="text-orange-400" />
+                <h2 className="text-sm font-bold text-white">Most Borrowed</h2>
+              </div>
+              <div className="p-4 space-y-3">
+                {topItems.slice(0, 5).map((item, i) => (
+                  <div key={item.itemId}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-[10px] font-bold text-gray-600 w-4 shrink-0">#{i + 1}</span>
+                        <p className="text-white text-xs font-medium truncate">{item.itemName}</p>
+                      </div>
+                      <span className="text-gray-400 text-[10px] font-bold shrink-0 ml-2">{item.count}×</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all"
+                        style={{ width: `${(item.count / maxTopCount) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Quick actions */}
           <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-white/5">
               <h2 className="text-sm font-bold text-white">Quick Actions</h2>
