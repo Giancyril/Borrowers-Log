@@ -34,12 +34,12 @@ const StatusBadge = ({ status }: { status: string }) => {
 function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => void }) {
   const [updateRecord, { isLoading }] = useUpdateBorrowRecordMutation();
   const [form, setForm] = useState({
-    borrowerName: record.borrowerName,
-    borrowerEmail: record.borrowerEmail,
+    borrowerName:       record.borrowerName,
+    borrowerEmail:      record.borrowerEmail,
     borrowerDepartment: record.borrowerDepartment,
-    purpose: record.purpose,
-    dueDate: record.dueDate?.slice(0, 10) ?? "",
-    quantityBorrowed: record.quantityBorrowed,
+    purpose:            record.purpose,
+    dueDate:            record.dueDate?.slice(0, 10) ?? "",
+    quantityBorrowed:   record.quantityBorrowed,
   });
 
   const handleSave = async (e: React.FormEvent) => {
@@ -67,10 +67,10 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
         </div>
         <form onSubmit={handleSave} className="p-5 space-y-3.5 overflow-y-auto">
           {[
-            { label: "Borrower Name",   key: "borrowerName",       type: "text"   },
-            { label: "Email",           key: "borrowerEmail",      type: "email"  },
-            { label: "Department",      key: "borrowerDepartment", type: "text"   },
-            { label: "Purpose",         key: "purpose",            type: "text"   },
+            { label: "Borrower Name", key: "borrowerName",       type: "text"  },
+            { label: "Email",         key: "borrowerEmail",      type: "email" },
+            { label: "Department",    key: "borrowerDepartment", type: "text"  },
+            { label: "Purpose",       key: "purpose",            type: "text"  },
           ].map(({ label, key, type }) => (
             <div key={key}>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{label}</label>
@@ -301,8 +301,10 @@ export default function BorrowRecordDetail() {
   };
 
   if (isLoading) return (
-    <div className="max-w-2xl mx-auto space-y-3">
-      {[...Array(5)].map((_, i) => <div key={i} className="h-16 bg-gray-800 rounded-2xl animate-pulse" />)}
+    <div className="space-y-3">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="h-16 bg-gray-800 rounded-2xl animate-pulse" />
+      ))}
     </div>
   );
 
@@ -316,23 +318,23 @@ export default function BorrowRecordDetail() {
   const canReturn = record.status === "ACTIVE" || record.status === "OVERDUE";
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="space-y-5">
       {showReturn && <ReturnModal record={record} onClose={() => { setShowReturn(false); refetch(); }} />}
       {showEdit   && <EditModal  record={record} onClose={() => { setShowEdit(false);   refetch(); }} />}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate("/borrow-records")}
-            className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+            className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
             <FaArrowLeft size={12} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-white">Borrow Record</h1>
-            <p className="text-gray-500 text-xs font-mono">{record.id.slice(0, 8)}...</p>
+            <h1 className="text-white text-xl font-bold tracking-tight">Borrow Record</h1>
+            <p className="text-gray-500 text-xs font-mono mt-0.5">{record.id.slice(0, 8)}...</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <StatusBadge status={record.status} />
           {record.status === "OVERDUE" && (
             <FaExclamationTriangle size={14} className="text-red-400 animate-pulse" />
@@ -340,7 +342,7 @@ export default function BorrowRecordDetail() {
         </div>
       </div>
 
-      {/* Borrower Info */}
+      {/* ── Borrower Info ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
         <div className="px-5 py-3.5 border-b border-white/5 flex items-center justify-between">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Borrower Information</h2>
@@ -353,19 +355,19 @@ export default function BorrowRecordDetail() {
         <div className="px-5 py-4 grid grid-cols-2 gap-4">
           {[
             ["Name",       record.borrowerName],
-            ["Email",      record.borrowerEmail || "—"],
+            ["Email",      record.borrowerEmail      || "—"],
             ["Department", record.borrowerDepartment || "—"],
-            ["Purpose",    record.purpose || "—"],
+            ["Purpose",    record.purpose            || "—"],
           ].map(([k, v]) => (
             <div key={k}>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{k}</p>
-              <p className="text-white text-sm mt-0.5">{v}</p>
+              <p className="text-white text-sm mt-0.5 break-words">{v}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Item & Dates */}
+      {/* ── Item & Dates ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
         <div className="px-5 py-3.5 border-b border-white/5">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Item & Dates</h2>
@@ -383,13 +385,13 @@ export default function BorrowRecordDetail() {
           ] as [string, string][]).map(([k, v]) => (
             <div key={k}>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{k}</p>
-              <p className="text-white text-sm mt-0.5">{v}</p>
+              <p className="text-white text-sm mt-0.5 break-words">{v}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Signatures */}
+      {/* ── Signatures ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
         <div className="px-5 py-3.5 border-b border-white/5">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Signatures</h2>
@@ -414,24 +416,24 @@ export default function BorrowRecordDetail() {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* ── Actions ── */}
       <div className="flex flex-wrap gap-2">
         {canReturn && (
           <button onClick={() => setShowReturn(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all">
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all">
             <FaUndo size={13} /> Process Return
           </button>
         )}
         <button onClick={() => setShowEdit(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
           <FaEdit size={12} /> Edit
         </button>
         <button onClick={() => printSlip(record)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
           <FaPrint size={12} /> Print Slip
         </button>
         <button onClick={handleDelete}
-          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl transition-all ml-auto">
+          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl transition-all sm:ml-auto">
           <FaTrash size={12} /> Delete
         </button>
       </div>

@@ -20,9 +20,9 @@ const fmt = (d: string) =>
   new Date(d).toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" });
 
 export default function BorrowerHistory() {
-  const { name }   = useParams<{ name: string }>();
-  const navigate   = useNavigate();
-  const decoded    = decodeURIComponent(name ?? "");
+  const { name } = useParams<{ name: string }>();
+  const navigate = useNavigate();
+  const decoded  = decodeURIComponent(name ?? "");
 
   const { data, isLoading } = useGetBorrowerHistoryQuery(decoded);
   const records = (data?.data ?? []) as BorrowRecord[];
@@ -32,44 +32,46 @@ export default function BorrowerHistory() {
   const returned = records.filter(r => r.status === "RETURNED").length;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="space-y-5">
 
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-          <FaArrowLeft size={12} />
-        </button>
-        <div>
-          <h1 className="text-xl font-bold text-white">Borrower History</h1>
-          <p className="text-gray-500 text-xs mt-0.5">{decoded}</p>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate(-1)}
+            className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
+            <FaArrowLeft size={12} />
+          </button>
+          <div>
+            <h1 className="text-white text-xl font-bold tracking-tight">Borrower History</h1>
+            <p className="text-gray-500 text-xs mt-0.5">{decoded}</p>
+          </div>
         </div>
       </div>
 
-      {/* Summary cards */}
+      {/* ── Summary cards ── */}
       {!isLoading && records.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Total Borrows", value: records.length, color: "text-white"        },
-            { label: "Active",        value: active + overdue, color: "text-blue-400"   },
-            { label: "Returned",      value: returned,        color: "text-emerald-400" },
+            { label: "Total Borrows", value: records.length,    color: "text-white"        },
+            { label: "Active",        value: active + overdue,  color: "text-blue-400"     },
+            { label: "Returned",      value: returned,          color: "text-emerald-400"  },
           ].map(({ label, value, color }) => (
-            <div key={label} className="bg-gray-900 border border-white/5 rounded-2xl p-4 text-center">
-              <p className={`text-2xl font-black ${color}`}>{value}</p>
+            <div key={label} className="bg-gray-900 border border-white/5 rounded-2xl p-5 text-center">
+              <p className={`text-3xl font-black ${color}`}>{value}</p>
               <p className="text-gray-500 text-xs mt-1">{label}</p>
             </div>
           ))}
         </div>
       )}
 
-      {/* Borrower profile card */}
+      {/* ── Borrower profile card ── */}
       {!isLoading && records.length > 0 && (
         <div className="bg-gray-900 border border-white/5 rounded-2xl p-5 flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
             <FaUser size={18} className="text-white" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-bold text-base">{decoded}</p>
+            <p className="text-white font-bold text-base truncate">{decoded}</p>
             {records[0]?.borrowerDepartment && (
               <p className="text-gray-400 text-sm mt-0.5">{records[0].borrowerDepartment}</p>
             )}
@@ -85,17 +87,23 @@ export default function BorrowerHistory() {
         </div>
       )}
 
-      {/* Records list */}
+      {/* ── Records list ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-white/5 flex items-center gap-2">
-          <FaClipboardList size={13} className="text-cyan-400" />
-          <h2 className="text-sm font-bold text-white">All Borrow Records</h2>
-          {!isLoading && <span className="ml-auto text-gray-500 text-xs">{records.length} total</span>}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
+          <div className="flex items-center gap-2">
+            <FaClipboardList size={13} className="text-cyan-400" />
+            <h2 className="text-sm font-bold text-white">All Borrow Records</h2>
+          </div>
+          {!isLoading && (
+            <span className="text-gray-500 text-xs">{records.length} total</span>
+          )}
         </div>
 
         {isLoading ? (
           <div className="p-4 space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-16 bg-gray-800 rounded-xl animate-pulse" />)}
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-16 bg-gray-800 rounded-xl animate-pulse" />
+            ))}
           </div>
         ) : records.length === 0 ? (
           <div className="py-16 text-center">
@@ -106,13 +114,15 @@ export default function BorrowerHistory() {
           <div className="divide-y divide-white/[0.04]">
             {records.map(r => (
               <Link key={r.id} to={`/borrow-records/${r.id}`}
-                className="flex items-center gap-3 px-5 py-4 hover:bg-white/[0.02] transition-colors group">
+                className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/[0.02] transition-colors group">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <p className="text-white text-sm font-semibold group-hover:text-cyan-400 transition-colors">{r.item?.name}</p>
+                    <p className="text-white text-sm font-semibold group-hover:text-cyan-400 transition-colors">
+                      {r.item?.name}
+                    </p>
                     <StatusBadge status={r.status} />
                   </div>
-                  <div className="flex gap-4 text-xs text-gray-500">
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500">
                     <span>Qty: {r.quantityBorrowed}</span>
                     <span>Borrowed: {fmt(r.borrowDate)}</span>
                     <span className={r.status === "OVERDUE" ? "text-red-400 font-semibold" : ""}>
@@ -120,7 +130,9 @@ export default function BorrowerHistory() {
                     </span>
                   </div>
                   {r.actualReturnDate && (
-                    <p className="text-emerald-500/70 text-xs mt-0.5">Returned: {fmt(r.actualReturnDate)}</p>
+                    <p className="text-emerald-500/70 text-xs mt-0.5">
+                      Returned: {fmt(r.actualReturnDate)}
+                    </p>
                   )}
                 </div>
                 <FaArrowRight size={10} className="text-gray-600 group-hover:text-gray-400 transition-colors shrink-0" />

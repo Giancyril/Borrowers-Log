@@ -1,10 +1,10 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useForm } from "react-hook-form";
 import {
   FaUser, FaShieldAlt, FaUserPlus, FaTrash, FaEye, FaEyeSlash,
-  FaKey, FaAt, FaIdBadge, FaTimes, FaCog,
+  FaKey, FaAt, FaIdBadge, FaCog,
 } from "react-icons/fa";
 import {
   useChangePasswordMutation,
@@ -18,14 +18,20 @@ import { useAdminUser, signOut } from "../../auth/auth";
 
 type Tab = "account" | "security" | "admins";
 
-const InputField = ({ className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
-  <input
-    {...props}
-    className={`w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm
-      placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40
-      transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
-  />
-);
+const InputField = React.forwardRef(function InputField(
+  { className = "", ...props }: React.InputHTMLAttributes<HTMLInputElement> & { className?: string },
+  ref: React.Ref<HTMLInputElement>
+) {
+  return (
+    <input
+      ref={ref}
+      {...props}
+      className={`w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm
+        placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40
+        transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${className}`}
+    />
+  );
+});
 
 const SubmitButton = ({ loading, children }: { loading?: boolean; children: React.ReactNode }) => (
   <button type="submit" disabled={loading}
@@ -39,12 +45,12 @@ const SubmitButton = ({ loading, children }: { loading?: boolean; children: Reac
 );
 
 export default function SettingsPage() {
-  const navigate   = useNavigate();
+  const navigate    = useNavigate();
   const currentUser = useAdminUser();
-  const [activeTab,  setActiveTab]  = useState<Tab>("account");
-  const [showPw,     setShowPw]     = useState(false);
-  const [showNewPw,  setShowNewPw]  = useState(false);
-  const [showRegPw,  setShowRegPw]  = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("account");
+  const [showPw,    setShowPw]    = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showRegPw, setShowRegPw] = useState(false);
 
   const [changePassword, { isLoading: pwLoading }]       = useChangePasswordMutation();
   const [changeEmail,    { isLoading: emailLoading }]    = useChangeEmailMutation();
@@ -106,33 +112,36 @@ export default function SettingsPage() {
   };
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "account",  label: "Account",  icon: <FaUser size={13} />       },
-    { key: "security", label: "Security", icon: <FaShieldAlt size={13} />  },
-    { key: "admins",   label: "Admins",   icon: <FaUserPlus size={13} />   },
+    { key: "account",  label: "Account",  icon: <FaUser size={13} />      },
+    { key: "security", label: "Security", icon: <FaShieldAlt size={13} /> },
+    { key: "admins",   label: "Admins",   icon: <FaUserPlus size={13} />  },
   ];
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <div className="space-y-5">
 
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gray-800 border border-white/5 flex items-center justify-center">
-          <FaCog size={16} className="text-gray-400" />
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-white">Settings</h1>
-          <p className="text-gray-500 text-xs mt-0.5">Manage your account and system</p>
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gray-800 border border-white/5 flex items-center justify-center shrink-0">
+            <FaCog size={16} className="text-gray-400" />
+          </div>
+          <div>
+            <h1 className="text-white text-xl font-bold tracking-tight">Settings</h1>
+            <p className="text-gray-500 text-xs mt-0.5">Manage your account and system</p>
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <div className="flex gap-1 bg-gray-900 border border-white/5 rounded-xl p-1">
         {tabs.map(({ key, label, icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
             className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
               activeTab === key ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:text-white"
             }`}>
-            {icon} {label}
+            {icon}
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>
@@ -148,9 +157,9 @@ export default function SettingsPage() {
                 {currentUser?.name?.charAt(0)?.toUpperCase() || currentUser?.username?.charAt(0)?.toUpperCase() || "A"}
               </span>
             </div>
-            <div>
-              <p className="text-white font-bold">{currentUser?.name || currentUser?.username}</p>
-              <p className="text-gray-400 text-sm">{currentUser?.email}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold truncate">{currentUser?.name || currentUser?.username}</p>
+              <p className="text-gray-400 text-sm truncate">{currentUser?.email}</p>
               <p className="text-gray-600 text-xs mt-0.5">{currentUser?.role}</p>
             </div>
           </div>
@@ -163,7 +172,9 @@ export default function SettingsPage() {
             </div>
             <form onSubmit={usernameForm.handleSubmit(handleChangeUsername)} className="p-5 space-y-3">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">New Username</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                  New Username
+                </label>
                 <InputField
                   {...usernameForm.register("username", { required: true })}
                   placeholder="new_username"
@@ -183,7 +194,9 @@ export default function SettingsPage() {
             </div>
             <form onSubmit={emailForm.handleSubmit(handleChangeEmail)} className="p-5 space-y-3">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">New Email</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                  New Email
+                </label>
                 <InputField
                   type="email"
                   {...emailForm.register("email", { required: true })}
@@ -191,7 +204,9 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Current Password</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                  Current Password
+                </label>
                 <InputField
                   type="password"
                   {...emailForm.register("password", { required: true })}
@@ -215,7 +230,9 @@ export default function SettingsPage() {
           </div>
           <form onSubmit={pwForm.handleSubmit(handleChangePassword)} className="p-5 space-y-3">
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Current Password</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                Current Password
+              </label>
               <div className="relative">
                 <InputField
                   type={showPw ? "text" : "password"}
@@ -230,7 +247,9 @@ export default function SettingsPage() {
               </div>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">New Password</label>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                New Password
+              </label>
               <div className="relative">
                 <InputField
                   type={showNewPw ? "text" : "password"}
@@ -247,7 +266,7 @@ export default function SettingsPage() {
                 <p className="text-red-400 text-xs mt-1">Minimum 8 characters required</p>
               )}
             </div>
-            <div className="pt-1 p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl">
+            <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl">
               <p className="text-amber-400/80 text-xs">You will be signed out after changing your password.</p>
             </div>
             <SubmitButton loading={pwLoading}>
@@ -268,22 +287,40 @@ export default function SettingsPage() {
               <h2 className="text-sm font-bold text-white">Register New Admin</h2>
             </div>
             <form onSubmit={regForm.handleSubmit(handleRegister)} className="p-5 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Full Name</label>
-                  <InputField {...regForm.register("name", { required: true })} placeholder="Juan Dela Cruz" />
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                    Full Name
+                  </label>
+                  <InputField
+                    {...regForm.register("name", { required: true })}
+                    placeholder="Juan Dela Cruz"
+                  />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Username</label>
-                  <InputField {...regForm.register("username", { required: true })} placeholder="jdelacruz" />
+                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                    Username
+                  </label>
+                  <InputField
+                    {...regForm.register("username", { required: true })}
+                    placeholder="jdelacruz"
+                  />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Email</label>
-                <InputField type="email" {...regForm.register("email", { required: true })} placeholder="admin@nbsc.edu.ph" />
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                  Email
+                </label>
+                <InputField
+                  type="email"
+                  {...regForm.register("email", { required: true })}
+                  placeholder="admin@nbsc.edu.ph"
+                />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Password</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                  Password
+                </label>
                 <div className="relative">
                   <InputField
                     type={showRegPw ? "text" : "password"}
@@ -307,18 +344,23 @@ export default function SettingsPage() {
           <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-white/5">
               <h2 className="text-sm font-bold text-white">Existing Admins</h2>
-              <p className="text-gray-500 text-xs mt-0.5">{admins.length} admin account{admins.length !== 1 ? "s" : ""}</p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                {admins.length} admin account{admins.length !== 1 ? "s" : ""}
+              </p>
             </div>
             {adminsLoading ? (
               <div className="p-4 space-y-3">
-                {[...Array(3)].map((_, i) => <div key={i} className="h-14 bg-gray-800 rounded-xl animate-pulse" />)}
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-14 bg-gray-800 rounded-xl animate-pulse" />
+                ))}
               </div>
             ) : admins.length === 0 ? (
               <div className="py-10 text-center text-gray-500 text-sm">No admins found</div>
             ) : (
               <div className="divide-y divide-white/[0.04]">
                 {admins.map((admin: any) => (
-                  <div key={admin.id} className="flex items-center gap-3 px-5 py-3.5">
+                  <div key={admin.id}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
                       <span className="text-white font-bold text-xs">
                         {admin.name?.charAt(0)?.toUpperCase() || admin.username?.charAt(0)?.toUpperCase()}
@@ -329,7 +371,9 @@ export default function SettingsPage() {
                       <p className="text-gray-500 text-xs truncate">{admin.email}</p>
                     </div>
                     {admin.id === currentUser?.id ? (
-                      <span className="px-2 py-0.5 bg-blue-500/15 text-blue-400 border border-blue-500/20 rounded-full text-[10px] font-bold shrink-0">You</span>
+                      <span className="px-2 py-0.5 bg-blue-500/15 text-blue-400 border border-blue-500/20 rounded-full text-[10px] font-bold shrink-0">
+                        You
+                      </span>
                     ) : (
                       <button
                         onClick={() => handleDeleteAdmin(admin.id, admin.name || admin.username)}

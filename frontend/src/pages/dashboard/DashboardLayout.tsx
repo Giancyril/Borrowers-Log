@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
   FaBars, FaTimes, FaSignOutAlt, FaChevronLeft, FaChevronRight, FaChevronDown,
+  FaCog,
 } from "react-icons/fa";
 import { signOut, useAdminUser } from "../../auth/auth";
 import { useGetDashboardStatsQuery } from "../../redux/api/api";
@@ -25,6 +26,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!profileOpen) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#profile-dropdown-anchor")) setProfileOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [profileOpen]);
+
   const isActive = (path: string, exact?: boolean) =>
     exact
       ? location.pathname === path
@@ -37,7 +49,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const overdueCount = stats?.data?.overdueRecords ?? 0;
 
   return (
-    // ── Same root structure as Lost & Found DashboardLayout ──
     <div className="min-h-screen bg-gray-950 lg:flex">
 
       {/* Mobile overlay */}
@@ -126,16 +137,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
+        {/* User footer */}
+        <div className="border-t border-white/5 px-3 py-3">
+          {!sidebarCollapsed ? (
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
+                <span className="text-white font-bold text-sm">{initial}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{user?.name || user?.username}</p>
+                <p className="text-gray-500 text-xs">{user?.role || "ADMIN"}</p>
+              </div>
+              <button onClick={() => signOut(navigate)} title="Sign out"
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                <FaSignOutAlt size={13} />
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => signOut(navigate)} title="Sign out"
+              className="w-full flex justify-center p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+              <FaSignOutAlt size={13} />
+            </button>
+          )}
+        </div>
       </aside>
 
-      {/* ── Main content — same as Lost & Found ── */}
+      {/* ── Main content ── */}
       <div className={`w-full flex flex-col min-h-screen bg-gray-950 transition-all duration-300
         ${sidebarCollapsed ? "lg:ml-[72px] lg:w-[calc(100%-72px)]" : "lg:ml-60 lg:w-[calc(100%-240px)]"}`}>
 
         {/* Topbar */}
         <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 sticky top-0 z-30">
 
-          {/* Hamburger — mobile LEFT */}
+          {/* Hamburger — mobile */}
           <button onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0">
             <FaBars size={16} />
@@ -157,28 +191,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex-1" />
 
-          {/* Right: Avatar only */}
-          <div className="flex items-center gap-2">
-            {/* Profile */}
-            <div className="relative">
-              <button onClick={() => setProfileOpen(p => !p)}
-                className="flex items-center gap-2 cursor-pointer group focus:outline-none">
-                <div className="relative">
-                  <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full flex items-center justify-center border-2 border-gray-700 group-hover:border-blue-400 transition-all shadow-lg">
-                    <span className="text-white font-bold text-sm">{initial}</span>
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-gray-950 rounded-full" />
+          {/* Right: Avatar + dropdown */}
+          <div id="profile-dropdown-anchor" className="relative flex items-center">
+            <button onClick={() => setProfileOpen(p => !p)}
+              className="flex items-center gap-2 cursor-pointer group focus:outline-none">
+              <div className="relative">
+                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full flex items-center justify-center border-2 border-gray-700 group-hover:border-blue-400 transition-all shadow-lg">
+                  <span className="text-white font-bold text-sm">{initial}</span>
                 </div>
-                <div className="hidden sm:block text-left">
-                  <p className="text-white text-sm font-semibold leading-none">{user?.username || user?.name || "Admin"}</p>
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-gray-900 rounded-full" />
+              </div>
+              <div className="hidden sm:block text-left">
+                <p className="text-white text-sm font-semibold leading-none">{user?.username || user?.name || "Admin"}</p>
+                <p className="text-gray-500 text-xs mt-0.5">{user?.role || "ADMIN"}</p>
+              </div>
+              <FaChevronDown size={10} className={`text-gray-500 hidden sm:block transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Dropdown */}
+            {profileOpen && (
+              <div className="absolute right-0 top-12 w-48 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                {/* User info header */}
+                <div className="px-4 py-3 border-b border-white/5">
+                  <p className="text-white text-sm font-semibold truncate">{user?.username || user?.name || "Admin"}</p>
                   <p className="text-gray-500 text-xs mt-0.5">{user?.role || "ADMIN"}</p>
                 </div>
-                <FaChevronDown size={10} className={`text-gray-500 hidden sm:block transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
-              </button>
-            {profileOpen && (
-              <div className="absolute right-0 top-12 w-44 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl overflow-hidden z-50">
                 <div className="py-1">
-                  <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
+                  <Link
+                    to="/settings"
+                    onClick={() => setProfileOpen(false)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-sm">
+                    <FaCog size={13} className="text-gray-400 shrink-0" />
+                    Settings
+                  </Link>
+                  <div className="mx-3 my-1 border-t border-white/5" />
+                  <button
+                    onClick={() => { setProfileOpen(false); signOut(navigate); }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-sm">
                     <FaSignOutAlt size={13} className="text-red-400 shrink-0" />
                     Sign Out
@@ -186,9 +234,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
               </div>
             )}
-            </div>
-
-
           </div>
         </header>
 

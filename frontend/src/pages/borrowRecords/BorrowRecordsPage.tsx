@@ -118,25 +118,25 @@ export default function BorrowRecordsPage() {
     <div className="space-y-5">
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-white text-xl font-bold tracking-tight">Borrow Records</h1>
-          <p className="text-gray-500 text-xs mt-0.5">
-            {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => exportCSV(records)}
-            className="inline-flex items-center gap-2 px-3 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all">
-            <FaDownload size={11} /> Export CSV
-          </button>
-          <Link to="/borrow-records/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20">
-            <FaPlus size={11} /> New Record
-          </Link>
-        </div>
-      </div>
+<div className="flex items-center justify-between gap-3">
+  <div>
+    <h1 className="text-white text-xl font-bold tracking-tight">Borrow Records</h1>
+    <p className="text-gray-500 text-xs mt-0.5">
+      {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
+    </p>
+  </div>
+  <div className="flex items-center gap-2 shrink-0">
+    <button
+      onClick={() => exportCSV(records)}
+      className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all whitespace-nowrap">
+      <FaDownload size={11} /> <span className="hidden sm:inline">Export CSV</span>
+    </button>
+    <Link to="/borrow-records/new"
+      className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
+      <FaPlus size={11} /> New Record
+    </Link>
+  </div>
+</div>
 
       {/* ── Bulk action bar ── */}
       {selected.size > 0 && (
