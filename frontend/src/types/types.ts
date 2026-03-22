@@ -2,16 +2,16 @@ export type ItemCategory = "EQUIPMENT" | "BOOKS" | "OFFICE_SUPPLIES" | "OTHER";
 export type BorrowStatus = "ACTIVE" | "RETURNED" | "OVERDUE";
 
 export interface Item {
-  id:              string;
-  name:            string;
-  category:        ItemCategory;
-  description:     string;
-  totalQuantity:   number;
+  id:                string;
+  name:              string;
+  category:          ItemCategory;
+  description:       string;
+  totalQuantity:     number;
   availableQuantity: number;
-  conditionNotes:  string;
-  isDeleted:       boolean;
-  createdAt:       string;
-  updatedAt:       string;
+  conditionNotes:    string;
+  isDeleted:         boolean;
+  createdAt:         string;
+  updatedAt:         string;
 }
 
 export interface BorrowRecord {
@@ -43,9 +43,14 @@ export interface DashboardStats {
   activeRecords:   number;
   overdueRecords:  number;
   returnedRecords: number;
-  recentRecords:   Pick<BorrowRecord, "id" | "borrowerName" | "status" | "createdAt"> & {
+  dueTodayCount:   number;
+  dueTomorrowCount: number;
+  borrowsToday:    number;
+  borrowsThisWeek: number;
+  topItems:        { itemId: string; itemName: string; count: number }[];
+  recentRecords:   (Pick<BorrowRecord, "id" | "borrowerName" | "status" | "createdAt"> & {
     item: Pick<Item, "id" | "name">;
-  }[];
+  })[];
 }
 
 export interface AdminUser {
