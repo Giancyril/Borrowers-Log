@@ -8,12 +8,17 @@ dotenv.config();
 
 const app: Application = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+  "https://borrowers-log.vercel.app",
+  process.env.CLIENT_URL,
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "authorization"],
@@ -22,7 +27,6 @@ app.use(
 
 app.options("*", cors());
 
-// 10mb to support base64 e-signatures (~5-20KB each)
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
