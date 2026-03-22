@@ -51,6 +51,9 @@ export interface DashboardStats {
   recentRecords:        (Pick<BorrowRecord, "id" | "borrowerName" | "status" | "createdAt"> & {
     item: Pick<Item, "id" | "name">;
   })[];
+   monthlyBorrows:    { month: string; count: number }[];
+  monthlyOverdue:    { month: string; count: number }[];
+  borrowsByCategory: { category: string; count: number }[];
 
   // new analytics fields
   avgBorrowDays:        number;
@@ -88,4 +91,16 @@ export interface ApiResponse<T> {
     limit:     number;
     totalPage: number;
   };
+}
+
+export interface ActivityLog {
+  id:         string;
+  action:     string;
+  entityType: string;
+  entityId:   string | null;
+  entityName: string | null;
+  details:    string;
+  adminId:    string | null;
+  adminName:  string | null;
+  createdAt:  string;
 }

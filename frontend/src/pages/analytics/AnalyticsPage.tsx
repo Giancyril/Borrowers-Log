@@ -2,14 +2,34 @@ import { useGetDashboardStatsQuery } from "../../redux/api/api";
 import {
   FaChartBar, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
   FaCheckCircle, FaFire, FaCalendarDay, FaUsers, FaClock,
-  FaArrowUp, FaBuilding, FaArrowRight,
+  FaBuilding, FaArrowRight,
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, PieChart, Pie, Cell, Legend,
+} from "recharts";
 
-const BAR_COLORS   = ["bg-blue-500",  "bg-cyan-500",    "bg-emerald-500", "bg-amber-500",  "bg-purple-500" ];
-const BAR_GLOWS    = ["shadow-blue-500/30", "shadow-cyan-500/30", "shadow-emerald-500/30", "shadow-amber-500/30", "shadow-purple-500/30"];
-const DEPT_COLORS  = ["bg-blue-500",  "bg-cyan-500",    "bg-emerald-500", "bg-amber-500",
-                      "bg-purple-500","bg-pink-500",    "bg-orange-500",  "bg-teal-500"  ];
+const BAR_COLORS  = ["bg-blue-500",  "bg-cyan-500",    "bg-emerald-500", "bg-amber-500",  "bg-purple-500"];
+const BAR_GLOWS   = ["shadow-blue-500/30", "shadow-cyan-500/30", "shadow-emerald-500/30", "shadow-amber-500/30", "shadow-purple-500/30"];
+const DEPT_COLORS = ["bg-blue-500", "bg-cyan-500", "bg-emerald-500", "bg-amber-500",
+                     "bg-purple-500", "bg-pink-500", "bg-orange-500", "bg-teal-500"];
+const PIE_COLORS  = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b"];
+const CAT_LABELS: Record<string, string> = {
+  EQUIPMENT: "Equipment", BOOKS: "Books",
+  OFFICE_SUPPLIES: "Office Supplies", OTHER: "Other",
+};
+
+const TOOLTIP_STYLE = {
+  contentStyle: {
+    background:   "#111827",
+    border:       "1px solid rgba(255,255,255,0.1)",
+    borderRadius: "12px",
+    fontSize:     "12px",
+    color:        "#fff",
+  },
+  labelStyle: { color: "#fff", fontWeight: "bold" },
+};
 
 function StatCard({
   label, value, icon: Icon, colorClass, bgClass, sub,
@@ -18,15 +38,15 @@ function StatCard({
   icon: React.ElementType; colorClass: string; bgClass: string; sub?: string;
 }) {
   return (
-    <div className="group bg-gray-900 border border-white/5 hover:border-white/10 rounded-2xl p-5 transition-all hover:shadow-lg hover:shadow-black/30">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${bgClass}`}>
-          <Icon size={15} className={colorClass} />
+    <div className="group bg-gray-900 border border-white/5 hover:border-white/10 rounded-2xl p-4 transition-all hover:shadow-lg hover:shadow-black/30">
+      <div className="flex items-start justify-between mb-3">
+        <div className={`w-8 h-8 rounded-xl border flex items-center justify-center ${bgClass}`}>
+          <Icon size={13} className={colorClass} />
         </div>
-        <FaArrowRight size={11} className={`mt-1 ${colorClass} opacity-30 group-hover:opacity-80 transition-all`} />
+        <FaArrowRight size={10} className={`mt-0.5 ${colorClass} opacity-30 group-hover:opacity-80 transition-all`} />
       </div>
-      <p className="text-3xl font-black text-white tracking-tight">{value ?? 0}</p>
-      <p className="text-gray-500 text-xs mt-1">{label}</p>
+      <p className="text-2xl font-black text-white tracking-tight">{value ?? 0}</p>
+      <p className="text-gray-500 text-[11px] mt-1 leading-tight">{label}</p>
       {sub && <p className="text-gray-700 text-[10px] mt-0.5">{sub}</p>}
     </div>
   );
@@ -50,6 +70,9 @@ export default function AnalyticsPage() {
   const topItems        = (stats?.topItems        ?? []) as { itemId: string; itemName: string; count: number }[];
   const borrowsPerDay   = (stats?.borrowsPerDay   ?? []) as { date: string; label: string; count: number }[];
   const departmentStats = (stats?.departmentStats ?? []) as { department: string; count: number }[];
+  const monthlyBorrows  = (stats?.monthlyBorrows  ?? []) as { month: string; count: number }[];
+  const monthlyOverdue  = (stats?.monthlyOverdue  ?? []) as { month: string; count: number }[];
+  const borrowsByCategory = (stats?.borrowsByCategory ?? []) as { category: string; count: number }[];
 
   const maxTopCount  = topItems[0]?.count        ?? 1;
   const maxDeptCount = departmentStats[0]?.count ?? 1;
@@ -65,10 +88,10 @@ export default function AnalyticsPage() {
   if (isLoading) return (
     <div className="space-y-4">
       <div className="h-10 w-48 bg-gray-800 rounded-xl animate-pulse" />
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...Array(6)].map((_, i) => <div key={i} className="h-32 bg-gray-800 rounded-2xl animate-pulse" />)}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        {[...Array(6)].map((_, i) => <div key={i} className="h-28 bg-gray-800 rounded-2xl animate-pulse" />)}
       </div>
-      {[...Array(4)].map((_, i) => <div key={i} className="h-40 bg-gray-800 rounded-2xl animate-pulse" />)}
+      {[...Array(5)].map((_, i) => <div key={i} className="h-48 bg-gray-800 rounded-2xl animate-pulse" />)}
     </div>
   );
 
@@ -78,9 +101,7 @@ export default function AnalyticsPage() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gray-800 border border-white/5 flex items-center justify-center shrink-0">
-            <FaChartBar size={15} className="text-gray-400" />
-          </div>
+          
           <div>
             <h1 className="text-white text-xl font-bold tracking-tight">Analytics</h1>
             <p className="text-gray-500 text-xs mt-0.5">System usage overview</p>
@@ -93,7 +114,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Summary cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         <StatCard label="Total Items"       value={stats?.totalItems}      icon={FaBoxOpen}             colorClass="text-blue-400"    bgClass="bg-blue-500/10 border-blue-500/20"       />
         <StatCard label="Active Borrows"    value={stats?.activeRecords}   icon={FaClipboardList}       colorClass="text-cyan-400"    bgClass="bg-cyan-500/10 border-cyan-500/20"       />
         <StatCard label="Overdue"           value={stats?.overdueRecords}  icon={FaExclamationTriangle} colorClass="text-red-400"     bgClass="bg-red-500/10 border-red-500/20"         />
@@ -102,7 +123,7 @@ export default function AnalyticsPage() {
         <StatCard label="Borrows This Week" value={stats?.borrowsThisWeek} icon={FaFire}                colorClass="text-orange-400"  bgClass="bg-orange-500/10 border-orange-500/20"   />
       </div>
 
-      {/* ── Borrower insights + return rate (side by side on lg) ── */}
+      {/* ── Borrower insights + return rate ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Borrower insights */}
@@ -110,9 +131,9 @@ export default function AnalyticsPage() {
           <SectionHeader icon={FaUsers} title="Borrower Insights" color="text-cyan-400" />
           <div className="grid grid-cols-3 divide-x divide-white/5">
             {[
-              { label: "Unique Borrowers",  value: stats?.uniqueBorrowers      ?? 0, color: "text-cyan-400"   },
-              { label: "Avg Per Person",    value: stats?.avgBorrowsPerPerson  ?? 0, color: "text-blue-400"   },
-              { label: "Avg Duration (d)",  value: stats?.avgBorrowDays        ?? 0, color: "text-amber-400"  },
+              { label: "Unique Borrowers", value: stats?.uniqueBorrowers     ?? 0, color: "text-cyan-400"  },
+              { label: "Avg Per Person",   value: stats?.avgBorrowsPerPerson ?? 0, color: "text-blue-400"  },
+              { label: "Avg Duration (d)", value: stats?.avgBorrowDays       ?? 0, color: "text-amber-400" },
             ].map(({ label, value, color }) => (
               <div key={label} className="p-5 text-center">
                 <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -204,14 +225,118 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* ── Borrows per day bar chart ── */}
+      {/* ── Monthly borrows bar chart (recharts) ── */}
+      {monthlyBorrows.length > 0 && (
+        <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
+          <SectionHeader icon={FaChartBar} title="Monthly Borrows — Last 6 Months" color="text-blue-400" />
+          <div className="p-5">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={monthlyBorrows} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  {...TOOLTIP_STYLE}
+                  itemStyle={{ color: "#60a5fa" }}
+                />
+                <Bar dataKey="count" name="Borrows" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* ── Overdue trend line chart (recharts) ── */}
+      {monthlyOverdue.length > 0 && (
+        <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
+          <SectionHeader icon={FaExclamationTriangle} title="Overdue Trend — Last 6 Months" color="text-red-400" />
+          <div className="p-5">
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={monthlyOverdue} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "#6b7280", fontSize: 10 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  {...TOOLTIP_STYLE}
+                  itemStyle={{ color: "#f87171" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="count"
+                  name="Overdue"
+                  stroke="#ef4444"
+                  strokeWidth={2}
+                  dot={{ fill: "#ef4444", r: 4 }}
+                  activeDot={{ r: 6 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* ── Borrows by category pie chart (recharts) ── */}
+      {borrowsByCategory.length > 0 && (
+        <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
+          <SectionHeader icon={FaBoxOpen} title="Borrows by Category" color="text-emerald-400" />
+          <div className="p-5">
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={borrowsByCategory}
+                  dataKey="count"
+                  nameKey="category"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  innerRadius={45}
+                  paddingAngle={3}>
+                  {borrowsByCategory.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  {...TOOLTIP_STYLE}
+                  formatter={(value: any, name: any) => [value, CAT_LABELS[name] ?? name]}
+                />
+                <Legend
+                  formatter={(value) => CAT_LABELS[value] ?? value}
+                  wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* ── Borrows per day bar chart (custom) ── */}
       {borrowsPerDay.length > 0 && (
         <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
           <SectionHeader icon={FaCalendarDay} title="Borrows — Last 7 Days" color="text-purple-400" />
           <div className="p-5">
             <div className="flex items-end gap-2" style={{ height: "100px" }}>
               {borrowsPerDay.map((day, i) => {
-                const pct = maxDayCount > 0 ? (day.count / maxDayCount) * 100 : 0;
+                const pct     = maxDayCount > 0 ? (day.count / maxDayCount) * 100 : 0;
                 const isToday = i === borrowsPerDay.length - 1;
                 return (
                   <div key={day.date} className="flex-1 flex flex-col items-center gap-1.5">
@@ -248,7 +373,7 @@ export default function AnalyticsPage() {
         </div>
       )}
 
-      {/* ── Department + Top items (side by side on lg) ── */}
+      {/* ── Department + Top items ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
         {/* Department breakdown */}
@@ -320,7 +445,7 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* ── Longest active borrow + Due date alerts (side by side) ── */}
+      {/* ── Longest active borrow + Due date alerts ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Longest active borrow */}

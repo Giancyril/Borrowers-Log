@@ -10,7 +10,7 @@ import {
 import { toast } from "react-toastify";
 import {
   FaArrowLeft, FaUndo, FaTrash, FaTimes, FaEraser,
-  FaCheckCircle, FaExclamationTriangle, FaEdit, FaPrint, FaUser,
+  FaCheckCircle, FaExclamationTriangle, FaEdit, FaPrint, FaUser, FaRedo,
 } from "react-icons/fa";
 import type { BorrowRecord } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -309,6 +309,20 @@ export default function BorrowRecordDetail() {
     }
   };
 
+  const handleReborrow = () => {
+    if (!record) return;
+    const params = new URLSearchParams({
+      reborrow:           "true",
+      borrowerName:       record.borrowerName,
+      borrowerEmail:      record.borrowerEmail      ?? "",
+      borrowerDepartment: record.borrowerDepartment ?? "",
+      purpose:            record.purpose            ?? "",
+      itemId:             record.itemId,
+      quantity:           String(record.quantityBorrowed),
+    });
+    navigate(`/borrow-records/new?${params.toString()}`);
+  };
+
   if (isLoading) return (
     <div className="space-y-3">
       {[...Array(5)].map((_, i) => (
@@ -440,21 +454,25 @@ export default function BorrowRecordDetail() {
       <div className="flex flex-wrap gap-2">
         {canReturn && (
           <button onClick={() => setShowReturn(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl transition-all">
-            <FaUndo size={13} /> Process Return
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all whitespace-nowrap">
+            <FaUndo size={11} /> Process Return
           </button>
         )}
         <button onClick={() => setShowEdit(true)}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
-          <FaEdit size={12} /> Edit
+          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-xs font-medium rounded-xl transition-all whitespace-nowrap">
+          <FaEdit size={11} /> Edit
+        </button>
+        <button onClick={handleReborrow}
+          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-cyan-600/15 hover:bg-cyan-600/25 border border-cyan-500/25 text-cyan-400 text-xs font-medium rounded-xl transition-all whitespace-nowrap">
+          <FaRedo size={11} /> Re-borrow
         </button>
         <button onClick={() => printSlip(record)}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-sm font-medium rounded-xl transition-all">
-          <FaPrint size={12} /> Print Slip
+          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-300 text-xs font-medium rounded-xl transition-all whitespace-nowrap">
+          <FaPrint size={11} /> Print Slip
         </button>
         <button onClick={handleDelete}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium rounded-xl transition-all sm:ml-auto">
-          <FaTrash size={12} /> Delete
+          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-medium rounded-xl transition-all whitespace-nowrap sm:ml-auto">
+          <FaTrash size={11} /> Delete
         </button>
       </div>
 

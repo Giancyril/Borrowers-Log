@@ -3,7 +3,7 @@ import { authController }          from "../modules/auth/auth.controller";
 import { itemsController }         from "../modules/items/items.controller";
 import { borrowRecordsController } from "../modules/borrowRecords/borrowRecords.controller";
 import auth                        from "../middlewares/auth";
-
+import { activityLogController } from "../modules/activityLog/activityLog.controller";
 const router = Router();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -42,5 +42,7 @@ router.post  ("/borrow-records",          auth(), borrowRecordsController.create
 router.put   ("/borrow-records/:id",      auth(), borrowRecordsController.updateRecord);
 router.put   ("/borrow-records/:id/return", auth(), borrowRecordsController.returnRecord);
 router.delete("/borrow-records/:id",      auth(), borrowRecordsController.deleteRecord);
+
+router.get("/activity-logs", auth(), activityLogController.getLogs);
 
 export default router;

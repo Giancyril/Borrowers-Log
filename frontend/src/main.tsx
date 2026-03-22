@@ -18,6 +18,7 @@ import OverduePage       from "./pages/borrowRecords/OverduePage";
 import SettingsPage      from "./pages/settings/SettingsPage";
 import BorrowerHistory   from "./pages/borrowRecords/BorrowerHistory";
 import AnalyticsPage from "./pages/analytics/AnalyticsPage";
+import ActivityLogsPage from "./pages/activity/ActivityLogsPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (!isAuthenticated()) return <Navigate to="/login" replace />;
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
       { path: "settings",               element: <DashboardLayout><SettingsPage /></DashboardLayout> },
       { path: "borrowers/:name",        element: <DashboardLayout><BorrowerHistory /></DashboardLayout> },
       { path: "analytics",              element: <DashboardLayout><AnalyticsPage /></DashboardLayout> },
+      { path: "activity-logs", element: <DashboardLayout><ActivityLogsPage /></DashboardLayout> },
     ],
   },
   { path: "*", element: <Navigate to="/dashboard" replace /> },

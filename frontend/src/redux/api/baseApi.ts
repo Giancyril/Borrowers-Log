@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { getToken } from "../../auth/auth";
+import { act } from "react";
 
 export const baseApi = createApi({
   reducerPath: "baseApi",
@@ -13,6 +14,6 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["items", "borrowRecords", "stats", "admins"],
+  tagTypes: ["items", "borrowRecords", "stats", "admins", "activityLogs"],
   endpoints: () => ({}),
 });

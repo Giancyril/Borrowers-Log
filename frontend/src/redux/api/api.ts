@@ -99,6 +99,11 @@ const api = baseApi.injectEndpoints({
       query: (body: { ids: string[] }) => ({ url: "/borrow-records/bulk-delete", method: "DELETE", body }),
       invalidatesTags: ["borrowRecords", "stats"],
     }),
+
+    getActivityLogs: build.query({
+      query: (params) => ({ url: "/activity-logs", params }),
+      providesTags: ["activityLogs"],
+    }),
   }),
 });
 
@@ -127,4 +132,5 @@ export const {
   useDeleteBorrowRecordMutation,
   useBulkReturnRecordsMutation,
   useBulkDeleteRecordsMutation,
+  useGetActivityLogsQuery,
 } = api;

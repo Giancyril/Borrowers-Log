@@ -41,7 +41,7 @@ const getSingleRecord = async (req: Request, res: Response) => {
 const updateRecord = async (req: Request, res: Response) => {
   try {
     const data   = updateBorrowRecordSchema.parse(req.body);
-    const result = await borrowRecordsService.updateRecord(req.params.id, data);
+    const result = await borrowRecordsService.updateRecord(req.params.id, data, req.user!.id);
     sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Record updated", data: result });
   } catch (err: any) {
     sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });
@@ -86,7 +86,7 @@ const bulkDelete = async (req: Request, res: Response) => {
 
 const deleteRecord = async (req: Request, res: Response) => {
   try {
-    await borrowRecordsService.deleteRecord(req.params.id);
+    await borrowRecordsService.deleteRecord(req.params.id, req.user!.id);
     sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Record deleted", data: null });
   } catch (err: any) {
     sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });

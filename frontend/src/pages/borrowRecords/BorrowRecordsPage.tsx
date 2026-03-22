@@ -162,37 +162,36 @@ export default function BorrowRecordsPage() {
       />
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-white text-xl font-bold tracking-tight">Borrow Records</h1>
-          <p className="text-gray-500 text-xs mt-0.5">
-            {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
-          </p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-white text-lg sm:text-xl font-bold tracking-tight truncate">Borrow Records</h1>
+            <p className="text-gray-500 text-xs mt-0.5">
+              {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button onClick={() => exportCSV(records)}
+              className="w-8 h-8 sm:w-auto sm:h-auto inline-flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all">
+              <FaDownload size={11} /> <span className="hidden sm:inline">Export</span>
+            </button>
+            <button
+              onClick={() => setShowFilters(f => !f)}
+              className={`w-8 h-8 sm:w-auto sm:h-auto inline-flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 border text-xs font-semibold rounded-xl transition-all ${
+                showFilters || hasActiveFilters
+                  ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
+                  : "bg-gray-800 hover:bg-gray-700 border-white/5 text-gray-300"
+              }`}>
+              <FaFilter size={10} />
+              {hasActiveFilters && (
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+              )}
+            </button>
+            <Link to="/borrow-records/new"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
+              <FaPlus size={10} /> New Record
+            </Link>
+          </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => exportCSV(records)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all whitespace-nowrap">
-            <FaDownload size={11} /> <span className="hidden sm:inline">Export CSV</span>
-          </button>
-          <button
-            onClick={() => setShowFilters(f => !f)}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 border text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
-              showFilters || hasActiveFilters
-                ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
-                : "bg-gray-800 hover:bg-gray-700 border-white/5 text-gray-300"
-            }`}>
-            <FaFilter size={10} />
-            <span className="hidden sm:inline">Filters</span>
-            {hasActiveFilters && (
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
-            )}
-          </button>
-          <Link to="/borrow-records/new"
-            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
-            <FaPlus size={11} /> New Record
-          </Link>
-        </div>
-      </div>
 
       {/* ── Advanced filters ── */}
       {showFilters && (

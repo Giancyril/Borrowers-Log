@@ -3,10 +3,11 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
   FaBars, FaTimes, FaSignOutAlt, FaChevronLeft, FaChevronRight,
-  FaChevronDown, FaCog, FaChartBar,
+  FaChevronDown, FaCog, FaChartBar, FaHistory,
 } from "react-icons/fa";
 import { signOut, useAdminUser } from "../../auth/auth";
 import { useGetDashboardStatsQuery } from "../../redux/api/api";
+import OnboardingTour from "../../components/ui/OnboardingTour";
 
 const menu = [
   { label: "Overview",       icon: FaTachometerAlt,       path: "/dashboard",     exact: true },
@@ -14,6 +15,7 @@ const menu = [
   { label: "Borrow Records", icon: FaClipboardList,       path: "/borrow-records"             },
   { label: "Overdue",        icon: FaExclamationTriangle, path: "/overdue"                    },
   { label: "Analytics",      icon: FaChartBar,            path: "/analytics"                  },
+  { label: "Activity Logs",  icon: FaHistory,             path: "/activity-logs"              },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -49,11 +51,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const overdueCount = stats?.data?.overdueRecords ?? 0;
 
   return (
-    <div className="min-h-screen bg-gray-950 lg:flex">
+    <div className="h-screen bg-gray-950 lg:flex overflow-hidden">
+
+      <OnboardingTour />
 
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+        <div className="fixed inset-0 bg-black/60 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)} />
       )}
 
@@ -163,11 +167,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main content ── */}
-      <div className={`w-full flex flex-col min-h-screen bg-gray-950 transition-all duration-300
+      <div className={`w-full flex flex-col h-screen bg-gray-950 transition-all duration-300
         ${sidebarCollapsed ? "lg:ml-[72px] lg:w-[calc(100%-72px)]" : "lg:ml-60 lg:w-[calc(100%-240px)]"}`}>
 
         {/* Topbar */}
-        <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 sticky top-0 z-30">
+        <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 z-30">
           <button onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0">
             <FaBars size={16} />
@@ -228,7 +232,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-5 lg:p-7 overflow-auto bg-gray-950">
+        {/* Page content */}
+        <main id="main-content" className="flex-1 p-4 sm:p-5 lg:p-7 overflow-y-auto bg-gray-950">
           {children}
         </main>
       </div>

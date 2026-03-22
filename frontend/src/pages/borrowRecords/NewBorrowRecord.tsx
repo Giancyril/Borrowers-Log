@@ -1,13 +1,12 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
 import { useGetItemsQuery, useCreateBorrowRecordMutation } from "../../redux/api/api";
 import { toast } from "react-toastify";
-import { FaArrowLeft, FaArrowRight, FaCheck, FaEraser } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaCheck, FaEraser, FaRedo } from "react-icons/fa";
 import type { Item } from "../../types/types";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
-
 const steps = ["Borrower Info", "Item & Dates", "Signature"];
 
 const StepIndicator = ({ current }: { current: number }) => (
@@ -37,26 +36,31 @@ const inputCls = "w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-x
 const labelCls = "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5";
 
 export default function NewBorrowRecord() {
-  const navigate  = useNavigate();
-  const sigRef    = useRef<SignatureCanvas>(null);
+  const navigate      = useNavigate();
+  const [searchParams] = useSearchParams();
+  const sigRef         = useRef<SignatureCanvas>(null);
+
+  // Pre-fill from re-borrow params
+  const isReborrow = searchParams.get("reborrow") === "true";
+
   const [step,    setStep]    = useState(0);
   const [sigDone, setSigDone] = useState(false);
   const [errors,  setErrors]  = useState<Record<string, string>>({});
 
   const [form, setForm] = useState({
-    borrowerName:       "",
-    borrowerEmail:      "",
-    borrowerDepartment: "",
-    purpose:            "",
-    itemId:             "",
-    quantityBorrowed:   1,
+    borrowerName:       searchParams.get("borrowerName")       ?? "",
+    borrowerEmail:      searchParams.get("borrowerEmail")      ?? "",
+    borrowerDepartment: searchParams.get("borrowerDepartment") ?? "",
+    purpose:            searchParams.get("purpose")            ?? "",
+    itemId:             searchParams.get("itemId")             ?? "",
+    quantityBorrowed:   Number(searchParams.get("quantity"))   || 1,
     borrowDate:         todayStr(),
     dueDate:            "",
     conditionOnBorrow:  "",
   });
 
   const { data: itemsData } = useGetItemsQuery({ limit: 100 });
-  const items = (itemsData?.data ?? []) as Item[];
+  const items        = (itemsData?.data ?? []) as Item[];
   const selectedItem = items.find(i => i.id === form.itemId);
 
   const [createRecord, { isLoading }] = useCreateBorrowRecordMutation();
@@ -88,14 +92,13 @@ export default function NewBorrowRecord() {
       return;
     }
     const borrowSignature = sigRef.current.toDataURL("image/png");
-
     try {
       const res: any = await createRecord({
         ...form,
         quantityBorrowed: Number(form.quantityBorrowed),
         borrowSignature,
       }).unwrap();
-      toast.success("Borrow record created!");
+      toast.success(isReborrow ? "Re-borrow record created!" : "Borrow record created!");
       navigate(`/borrow-records/${res.data.id}`);
     } catch (err: any) {
       toast.error(err?.data?.message ?? "Failed to create record");
@@ -105,20 +108,38 @@ export default function NewBorrowRecord() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate("/borrow-records")}
+        <button onClick={() => navigate(-1)}
           className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
           <FaArrowLeft size={12} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-white">New Borrow Record</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl font-bold text-white">
+              {isReborrow ? "Re-borrow Record" : "New Borrow Record"}
+            </h1>
+            {isReborrow && (
+              <span className="px-2 py-0.5 bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 rounded-full text-[10px] font-bold">
+                <FaRedo size={8} className="inline mr-1" />Re-borrow
+              </span>
+            )}
+          </div>
           <p className="text-gray-500 text-sm">Admin log — step {step + 1} of {steps.length}</p>
         </div>
       </div>
 
+      {isReborrow && step === 0 && (
+        <div className="mb-4 flex items-center gap-2 px-4 py-3 bg-cyan-500/5 border border-cyan-500/15 rounded-xl">
+          <FaRedo size={11} className="text-cyan-400 shrink-0" />
+          <p className="text-cyan-300/80 text-xs">
+            Borrower details pre-filled from previous record. Update dates and signature as needed.
+          </p>
+        </div>
+      )}
+
       <div className="bg-gray-900 border border-white/5 rounded-2xl p-5 sm:p-7">
         <StepIndicator current={step} />
 
-        {/* ── Step 0: Borrower Info ── */}
+        {/* Step 0: Borrower Info */}
         {step === 0 && (
           <div className="space-y-4">
             <div>
@@ -148,7 +169,7 @@ export default function NewBorrowRecord() {
           </div>
         )}
 
-        {/* ── Step 1: Item & Dates ── */}
+        {/* Step 1: Item & Dates */}
         {step === 1 && (
           <div className="space-y-4">
             <div>
@@ -205,7 +226,7 @@ export default function NewBorrowRecord() {
           </div>
         )}
 
-        {/* ── Step 2: E-Signature ── */}
+        {/* Step 2: E-Signature */}
         {step === 2 && (
           <div className="space-y-4">
             <div className="bg-gray-800/50 border border-white/5 rounded-xl px-4 py-3 text-xs text-gray-400 space-y-1">
@@ -213,7 +234,6 @@ export default function NewBorrowRecord() {
               <p><span className="text-gray-300 font-semibold">Item:</span> {selectedItem?.name} × {form.quantityBorrowed}</p>
               <p><span className="text-gray-300 font-semibold">Due:</span> {form.dueDate}</p>
             </div>
-
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className={labelCls + " mb-0"}>Borrower Signature *</label>
@@ -233,7 +253,6 @@ export default function NewBorrowRecord() {
               </div>
               <p className="text-gray-600 text-[10px] mt-1.5 text-center">Draw signature with mouse or touch</p>
             </div>
-
             <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3">
               <p className="text-amber-300/80 text-xs leading-relaxed">
                 ℹ️ By signing, the borrower acknowledges responsibility for the item and agrees to return it by the due date in good condition.

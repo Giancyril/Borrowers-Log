@@ -24,6 +24,34 @@ enum BorrowStatus {
   OVERDUE
 }
 
+enum ActivityAction {
+  CREATED
+  UPDATED
+  RETURNED
+  DELETED
+  BULK_RETURNED
+  BULK_DELETED
+  LOGIN
+  REGISTERED
+  CHANGED_PASSWORD
+  CHANGED_EMAIL
+  CHANGED_USERNAME
+}
+
+model ActivityLog {
+  id         String         @id @default(uuid())
+  action     ActivityAction
+  entityType String         // "BorrowRecord" | "Item" | "User"
+  entityId   String?
+  entityName String?        // human-readable label e.g. borrower name
+  details    String         @default("")
+  adminId    String?
+  adminName  String?
+  createdAt  DateTime       @default(now())
+
+  @@map("activityLogs")
+}
+
 model User {
   id        String   @id @default(uuid())
   username  String   @unique
