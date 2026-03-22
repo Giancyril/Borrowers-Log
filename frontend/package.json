@@ -10,6 +10,9 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.2.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1",
+    "jwt-decode": "^4.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.51.0",
@@ -18,9 +21,8 @@
     "react-router-dom": "^6.22.1",
     "react-signature-canvas": "^1.0.6",
     "react-toastify": "^10.0.4",
-    "jwt-decode": "^4.0.0",
-    "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1"
+    "vite-plugin-pwa": "^1.2.0",
+    "workbox-window": "^7.4.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",

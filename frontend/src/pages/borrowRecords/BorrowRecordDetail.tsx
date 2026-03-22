@@ -13,6 +13,8 @@ import {
   FaCheckCircle, FaExclamationTriangle, FaEdit, FaPrint, FaUser,
 } from "react-icons/fa";
 import type { BorrowRecord } from "../../types/types";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const fmt = (d: string | null | undefined) =>
   d ? new Date(d).toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" }) : "—";
@@ -283,6 +285,7 @@ export default function BorrowRecordDetail() {
   const navigate = useNavigate();
   const [showReturn, setShowReturn] = useState(false);
   const [showEdit,   setShowEdit]   = useState(false);
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
   const { data, isLoading, refetch } = useGetSingleBorrowRecordQuery(id!);
   const [deleteRecord] = useDeleteBorrowRecordMutation();
@@ -290,7 +293,13 @@ export default function BorrowRecordDetail() {
   const record = data?.data as BorrowRecord | undefined;
 
   const handleDelete = async () => {
-    if (!confirm("Delete this borrow record?")) return;
+    const ok = await confirm({
+      title:       "Delete Record",
+      message:     "Permanently delete this borrow record? This cannot be undone.",
+      confirmText: "Delete",
+      variant:     "danger",
+    });
+    if (!ok) return;
     try {
       await deleteRecord(id!).unwrap();
       toast.success("Record deleted");
@@ -319,6 +328,17 @@ export default function BorrowRecordDetail() {
 
   return (
     <div className="space-y-5">
+      <ConfirmDialog
+        isOpen={isOpen}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+
       {showReturn && <ReturnModal record={record} onClose={() => { setShowReturn(false); refetch(); }} />}
       {showEdit   && <EditModal  record={record} onClose={() => { setShowEdit(false);   refetch(); }} />}
 

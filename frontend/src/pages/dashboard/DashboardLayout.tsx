@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
-  FaBars, FaTimes, FaSignOutAlt, FaChevronLeft, FaChevronRight, FaChevronDown,
-  FaCog,
+  FaBars, FaTimes, FaSignOutAlt, FaChevronLeft, FaChevronRight,
+  FaChevronDown, FaCog, FaChartBar,
 } from "react-icons/fa";
 import { signOut, useAdminUser } from "../../auth/auth";
 import { useGetDashboardStatsQuery } from "../../redux/api/api";
@@ -13,6 +13,7 @@ const menu = [
   { label: "Inventory",      icon: FaBoxOpen,             path: "/items"                      },
   { label: "Borrow Records", icon: FaClipboardList,       path: "/borrow-records"             },
   { label: "Overdue",        icon: FaExclamationTriangle, path: "/overdue"                    },
+  { label: "Analytics",      icon: FaChartBar,            path: "/analytics"                  },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -26,7 +27,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     if (!profileOpen) return;
     const handler = (e: MouseEvent) => {
@@ -168,14 +168,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Topbar */}
         <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 sticky top-0 z-30">
-
-          {/* Hamburger — mobile */}
           <button onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0">
             <FaBars size={16} />
           </button>
 
-          {/* Logo */}
           <div className="flex items-center gap-2.5 select-none">
             <img
               src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
@@ -191,7 +188,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="flex-1" />
 
-          {/* Right: Avatar + dropdown */}
           <div id="profile-dropdown-anchor" className="relative flex items-center">
             <button onClick={() => setProfileOpen(p => !p)}
               className="flex items-center gap-2 cursor-pointer group focus:outline-none">
@@ -208,25 +204,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <FaChevronDown size={10} className={`text-gray-500 hidden sm:block transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
             </button>
 
-            {/* Dropdown */}
             {profileOpen && (
               <div className="absolute right-0 top-12 w-48 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-                {/* User info header */}
                 <div className="px-4 py-3 border-b border-white/5">
                   <p className="text-white text-sm font-semibold truncate">{user?.username || user?.name || "Admin"}</p>
                   <p className="text-gray-500 text-xs mt-0.5">{user?.role || "ADMIN"}</p>
                 </div>
                 <div className="py-1">
-                  <Link
-                    to="/settings"
-                    onClick={() => setProfileOpen(false)}
+                  <Link to="/settings" onClick={() => setProfileOpen(false)}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-sm">
                     <FaCog size={13} className="text-gray-400 shrink-0" />
                     Settings
                   </Link>
                   <div className="mx-3 my-1 border-t border-white/5" />
-                  <button
-                    onClick={() => { setProfileOpen(false); signOut(navigate); }}
+                  <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-sm">
                     <FaSignOutAlt size={13} className="text-red-400 shrink-0" />
                     Sign Out
@@ -237,7 +228,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Page content */}
         <main className="flex-1 p-4 sm:p-5 lg:p-7 overflow-auto bg-gray-950">
           {children}
         </main>

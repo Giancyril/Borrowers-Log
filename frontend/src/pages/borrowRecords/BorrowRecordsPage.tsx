@@ -9,9 +9,11 @@ import {
 import { toast } from "react-toastify";
 import {
   FaPlus, FaSearch, FaTrash, FaEye, FaClipboardList, FaTimes,
-  FaCheckSquare, FaSquare, FaUndo, FaDownload, FaUser,
+  FaCheckSquare, FaSquare, FaUndo, FaDownload, FaUser, FaFilter,
 } from "react-icons/fa";
 import type { BorrowRecord, BorrowStatus } from "../../types/types";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const STATUS_TABS = [
   { label: "All",      value: "" },
@@ -67,18 +69,31 @@ const exportCSV = (records: BorrowRecord[]) => {
 
 export default function BorrowRecordsPage() {
   const navigate = useNavigate();
-  const [search,   setSearch]   = useState("");
-  const [status,   setStatus]   = useState("");
-  const [page,     setPage]     = useState(1);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
-  const [deleteRecord]    = useDeleteBorrowRecordMutation();
+  const [search,      setSearch]      = useState("");
+  const [status,      setStatus]      = useState("");
+  const [page,        setPage]        = useState(1);
+  const [selected,    setSelected]    = useState<Set<string>>(new Set());
+  const [showFilters, setShowFilters] = useState(false);
+  const [dateFrom,    setDateFrom]    = useState("");
+  const [dateTo,      setDateTo]      = useState("");
+
+  const [deleteRecord]                             = useDeleteBorrowRecordMutation();
   const [bulkReturn, { isLoading: bulkReturning }] = useBulkReturnRecordsMutation();
   const [bulkDelete, { isLoading: bulkDeleting  }] = useBulkDeleteRecordsMutation();
 
-  const { data, isLoading } = useGetBorrowRecordsQuery({ search, status, page, limit: 12 });
+  const { data, isLoading } = useGetBorrowRecordsQuery({
+    search, status, page, limit: 12,
+    ...(dateFrom && { dateFrom }),
+    ...(dateTo   && { dateTo   }),
+  });
   const records = (data?.data ?? []) as BorrowRecord[];
   const meta    = data?.meta;
+
+  const hasActiveFilters = dateFrom || dateTo;
+
+  const clearFilters = () => { setDateFrom(""); setDateTo(""); setPage(1); };
 
   const toggleSelect = (id: string) =>
     setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
@@ -89,13 +104,25 @@ export default function BorrowRecordsPage() {
   const clearSelection = () => setSelected(new Set());
 
   const handleDelete = async (r: BorrowRecord) => {
-    if (!confirm(`Delete borrow record for "${r.borrowerName}"?`)) return;
+    const ok = await confirm({
+      title:       "Delete Record",
+      message:     `Delete borrow record for "${r.borrowerName}"? This cannot be undone.`,
+      confirmText: "Delete",
+      variant:     "danger",
+    });
+    if (!ok) return;
     try { await deleteRecord(r.id).unwrap(); toast.success("Record deleted"); }
     catch (err: any) { toast.error(err?.data?.message ?? "Failed to delete"); }
   };
 
   const handleBulkReturn = async () => {
-    if (!confirm(`Mark ${selected.size} record(s) as returned?`)) return;
+    const ok = await confirm({
+      title:       "Mark as Returned",
+      message:     `Mark ${selected.size} record(s) as returned? This action cannot be undone.`,
+      confirmText: "Mark Returned",
+      variant:     "info",
+    });
+    if (!ok) return;
     try {
       await bulkReturn({ ids: Array.from(selected) }).unwrap();
       toast.success(`${selected.size} record(s) marked as returned`);
@@ -104,7 +131,13 @@ export default function BorrowRecordsPage() {
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`Delete ${selected.size} record(s)? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title:       "Bulk Delete",
+      message:     `Permanently delete ${selected.size} record(s)? This cannot be undone.`,
+      confirmText: "Delete All",
+      variant:     "danger",
+    });
+    if (!ok) return;
     try {
       await bulkDelete({ ids: Array.from(selected) }).unwrap();
       toast.success(`${selected.size} record(s) deleted`);
@@ -117,26 +150,82 @@ export default function BorrowRecordsPage() {
   return (
     <div className="space-y-5">
 
+      <ConfirmDialog
+        isOpen={isOpen}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+
       {/* ── Header ── */}
-<div className="flex items-center justify-between gap-3">
-  <div>
-    <h1 className="text-white text-xl font-bold tracking-tight">Borrow Records</h1>
-    <p className="text-gray-500 text-xs mt-0.5">
-      {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
-    </p>
-  </div>
-  <div className="flex items-center gap-2 shrink-0">
-    <button
-      onClick={() => exportCSV(records)}
-      className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all whitespace-nowrap">
-      <FaDownload size={11} /> <span className="hidden sm:inline">Export CSV</span>
-    </button>
-    <Link to="/borrow-records/new"
-      className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
-      <FaPlus size={11} /> New Record
-    </Link>
-  </div>
-</div>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-white text-xl font-bold tracking-tight">Borrow Records</h1>
+          <p className="text-gray-500 text-xs mt-0.5">
+            {meta?.total ?? 0} record{meta?.total !== 1 ? "s" : ""}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={() => exportCSV(records)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all whitespace-nowrap">
+            <FaDownload size={11} /> <span className="hidden sm:inline">Export CSV</span>
+          </button>
+          <button
+            onClick={() => setShowFilters(f => !f)}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 border text-xs font-semibold rounded-xl transition-all whitespace-nowrap ${
+              showFilters || hasActiveFilters
+                ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
+                : "bg-gray-800 hover:bg-gray-700 border-white/5 text-gray-300"
+            }`}>
+            <FaFilter size={10} />
+            <span className="hidden sm:inline">Filters</span>
+            {hasActiveFilters && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0" />
+            )}
+          </button>
+          <Link to="/borrow-records/new"
+            className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
+            <FaPlus size={11} /> New Record
+          </Link>
+        </div>
+      </div>
+
+      {/* ── Advanced filters ── */}
+      {showFilters && (
+        <div className="bg-gray-900 border border-white/5 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Date Range</p>
+            {hasActiveFilters && (
+              <button onClick={clearFilters}
+                className="text-xs text-red-400 hover:text-red-300 transition-colors">
+                Clear filters
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                From
+              </label>
+              <input type="date" value={dateFrom}
+                onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+                className="w-full px-3 py-2 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
+                To
+              </label>
+              <input type="date" value={dateTo}
+                onChange={e => { setDateTo(e.target.value); setPage(1); }}
+                className="w-full px-3 py-2 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Bulk action bar ── */}
       {selected.size > 0 && (
@@ -188,7 +277,6 @@ export default function BorrowRecordsPage() {
       {/* ── Table ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
         <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-3 text-[10px] uppercase tracking-widest text-gray-600 font-semibold border-b border-white/5">
-          {/* Select all */}
           <div className="col-span-1 flex items-center">
             <button onClick={toggleAll} className="text-gray-500 hover:text-white transition-colors">
               {allOnPageSelected
@@ -213,9 +301,9 @@ export default function BorrowRecordsPage() {
             <FaClipboardList size={32} className="text-gray-700 mx-auto mb-3" />
             <p className="text-gray-400 font-semibold text-sm">No records found</p>
             <p className="text-gray-600 text-xs mt-1">
-              {search || status ? "Try adjusting your filters" : "Create your first borrow record"}
+              {search || status || hasActiveFilters ? "Try adjusting your filters" : "Create your first borrow record"}
             </p>
-            {!search && !status && (
+            {!search && !status && !hasActiveFilters && (
               <Link to="/borrow-records/new"
                 className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all">
                 <FaPlus size={10} /> New Record

@@ -1,8 +1,16 @@
 import { useState } from "react";
-import { useGetItemsQuery, useCreateItemMutation, useUpdateItemMutation, useDeleteItemMutation } from "../../redux/api/api";
+import {
+  useGetItemsQuery, useCreateItemMutation,
+  useUpdateItemMutation, useDeleteItemMutation,
+} from "../../redux/api/api";
 import { toast } from "react-toastify";
-import { FaPlus, FaEdit, FaTrash, FaBoxOpen, FaTimes, FaSearch, FaArrowRight } from "react-icons/fa";
+import {
+  FaPlus, FaEdit, FaTrash, FaBoxOpen, FaTimes,
+  FaSearch, FaExclamationTriangle,
+} from "react-icons/fa";
 import type { Item, ItemCategory } from "../../types/types";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 const CATEGORIES: ItemCategory[] = ["EQUIPMENT", "BOOKS", "OFFICE_SUPPLIES", "OTHER"];
 const CAT_LABEL: Record<ItemCategory, string> = {
@@ -100,6 +108,7 @@ export default function ItemsPage() {
   const [category, setCategory] = useState("");
   const [page,     setPage]     = useState(1);
   const [modal,    setModal]    = useState<"create" | Item | null>(null);
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
   const { data, isLoading } = useGetItemsQuery({ search, category, page, limit: 12 });
   const [deleteItem] = useDeleteItemMutation();
@@ -107,17 +116,37 @@ export default function ItemsPage() {
   const items = (data?.data ?? []) as Item[];
   const meta  = data?.meta;
 
+  const outOfStock = items.filter(i => i.availableQuantity === 0).length;
+  const lowStock   = items.filter(i => i.availableQuantity > 0 && i.availableQuantity <= 2).length;
+
   const handleDelete = async (item: Item) => {
-    if (!confirm(`Delete "${item.name}"?`)) return;
+    const ok = await confirm({
+      title:       "Delete Item",
+      message:     `Delete "${item.name}" from inventory? This cannot be undone.`,
+      confirmText: "Delete",
+      variant:     "danger",
+    });
+    if (!ok) return;
     try { await deleteItem(item.id).unwrap(); toast.success("Item deleted"); }
     catch (err: any) { toast.error(err?.data?.message ?? "Failed to delete"); }
   };
 
   return (
     <div className="space-y-5">
+      <ConfirmDialog
+        isOpen={isOpen}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+
       {modal && <ItemModal item={modal === "create" ? undefined : modal} onClose={() => setModal(null)} />}
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div>
           <h1 className="text-white text-xl font-bold tracking-tight">Inventory</h1>
@@ -129,7 +158,23 @@ export default function ItemsPage() {
         </button>
       </div>
 
-      {/* Filters */}
+      {/* ── Low stock alert ── */}
+      {!isLoading && (outOfStock > 0 || lowStock > 0) && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-500/8 border border-amber-500/20 rounded-xl">
+          <FaExclamationTriangle size={13} className="text-amber-400 shrink-0" />
+          <p className="text-amber-300 text-xs font-semibold flex gap-2 flex-wrap">
+            {outOfStock > 0 && (
+              <span className="text-red-400">{outOfStock} out of stock</span>
+            )}
+            {outOfStock > 0 && lowStock > 0 && <span className="text-amber-500">·</span>}
+            {lowStock > 0 && (
+              <span>{lowStock} low stock</span>
+            )}
+          </p>
+        </div>
+      )}
+
+      {/* ── Filters ── */}
       <div className="flex gap-2">
         <div className="relative flex-1">
           <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={12} />
@@ -144,7 +189,7 @@ export default function ItemsPage() {
         </select>
       </div>
 
-      {/* Table */}
+      {/* ── Table ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
         <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-3 text-[10px] uppercase tracking-widest text-gray-600 font-semibold border-b border-white/5">
           <div className="col-span-4">Item</div>
@@ -183,9 +228,24 @@ export default function ItemsPage() {
                   </div>
                   <div className="col-span-2 text-center text-white text-sm font-semibold">{item.totalQuantity}</div>
                   <div className="col-span-2 text-center">
-                    <span className={`text-sm font-bold ${item.availableQuantity === 0 ? "text-red-400" : item.availableQuantity < 3 ? "text-amber-400" : "text-emerald-400"}`}>
-                      {item.availableQuantity}
-                    </span>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <span className={`text-sm font-bold ${
+                        item.availableQuantity === 0 ? "text-red-400" :
+                        item.availableQuantity <= 2  ? "text-amber-400" : "text-emerald-400"
+                      }`}>
+                        {item.availableQuantity}
+                      </span>
+                      {item.availableQuantity === 0 && (
+                        <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-bold rounded-full">
+                          OUT
+                        </span>
+                      )}
+                      {item.availableQuantity > 0 && item.availableQuantity <= 2 && (
+                        <span className="px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold rounded-full">
+                          LOW
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="col-span-2 flex items-center justify-end gap-1.5">
                     <button onClick={() => setModal(item)}
@@ -198,6 +258,7 @@ export default function ItemsPage() {
                     </button>
                   </div>
                 </div>
+
                 {/* Mobile */}
                 <div className="sm:hidden p-4 hover:bg-white/[0.02] transition-colors">
                   <div className="flex items-start justify-between gap-2">
@@ -208,13 +269,23 @@ export default function ItemsPage() {
                       </span>
                     </div>
                     <div className="flex gap-1.5">
-                      <button onClick={() => setModal(item)} className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400"><FaEdit size={11} /></button>
-                      <button onClick={() => handleDelete(item)} className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400"><FaTrash size={10} /></button>
+                      <button onClick={() => setModal(item)} className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                        <FaEdit size={11} />
+                      </button>
+                      <button onClick={() => handleDelete(item)} className="w-7 h-7 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400">
+                        <FaTrash size={10} />
+                      </button>
                     </div>
                   </div>
                   <div className="flex gap-4 mt-2 text-xs text-gray-500">
                     <span>Total: <strong className="text-white">{item.totalQuantity}</strong></span>
-                    <span>Available: <strong className={item.availableQuantity === 0 ? "text-red-400" : "text-emerald-400"}>{item.availableQuantity}</strong></span>
+                    <span>Available: <strong className={
+                      item.availableQuantity === 0 ? "text-red-400" :
+                      item.availableQuantity <= 2  ? "text-amber-400" : "text-emerald-400"
+                    }>{item.availableQuantity}</strong>
+                    {item.availableQuantity === 0 && <span className="ml-1 text-red-400 text-[9px] font-bold">OUT</span>}
+                    {item.availableQuantity > 0 && item.availableQuantity <= 2 && <span className="ml-1 text-amber-400 text-[9px] font-bold">LOW</span>}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -223,7 +294,7 @@ export default function ItemsPage() {
         )}
       </div>
 
-      {/* Pagination */}
+      {/* ── Pagination ── */}
       {meta && meta.totalPage > 1 && (
         <div className="flex items-center justify-center gap-1.5">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
