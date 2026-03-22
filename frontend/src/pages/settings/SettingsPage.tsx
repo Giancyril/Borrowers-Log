@@ -15,6 +15,8 @@ import {
   useDeleteAdminMutation,
 } from "../../redux/api/api";
 import { useAdminUser, signOut } from "../../auth/auth";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
 
 type Tab = "account" | "security" | "admins";
 
@@ -52,6 +54,8 @@ export default function SettingsPage() {
   const [showNewPw, setShowNewPw] = useState(false);
   const [showRegPw, setShowRegPw] = useState(false);
 
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
+
   const [changePassword, { isLoading: pwLoading }]       = useChangePasswordMutation();
   const [changeEmail,    { isLoading: emailLoading }]    = useChangeEmailMutation();
   const [changeUsername, { isLoading: usernameLoading }] = useChangeUsernameMutation();
@@ -77,11 +81,10 @@ export default function SettingsPage() {
 
   const handleChangeEmail = async (data: any) => {
     try {
-      const res: any = await changeEmail(data);
+      const res: any = await changeEmail({ email: data.email });
       if (res?.error) { toast.error(res.error?.data?.message ?? "Failed"); return; }
-      toast.success("Email changed! Please sign in again.");
+      toast.success("Email updated successfully!");
       emailForm.reset();
-      setTimeout(() => signOut(navigate), 1500);
     } catch { toast.error("Failed to change email"); }
   };
 
@@ -104,7 +107,13 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAdmin = async (id: string, name: string) => {
-    if (!confirm(`Delete admin "${name}"? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title:       "Delete Admin",
+      message:     `Delete admin "${name}"? This cannot be undone.`,
+      confirmText: "Delete",
+      variant:     "danger",
+    });
+    if (!ok) return;
     try {
       await deleteAdmin(id).unwrap();
       toast.success("Admin deleted");
@@ -120,16 +129,22 @@ export default function SettingsPage() {
   return (
     <div className="space-y-5">
 
+      <ConfirmDialog
+        isOpen={isOpen}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gray-800 border border-white/5 flex items-center justify-center shrink-0">
-            <FaCog size={16} className="text-gray-400" />
-          </div>
-          <div>
-            <h1 className="text-white text-xl font-bold tracking-tight">Settings</h1>
-            <p className="text-gray-500 text-xs mt-0.5">Manage your account and system</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-white text-xl font-bold tracking-tight">Settings</h1>
+          <p className="text-gray-500 text-xs mt-0.5">Manage your account and system</p>
         </div>
       </div>
 
@@ -203,18 +218,8 @@ export default function SettingsPage() {
                   placeholder="new@nbsc.edu.ph"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
-                  Current Password
-                </label>
-                <InputField
-                  type="password"
-                  {...emailForm.register("password", { required: true })}
-                  placeholder="••••••••"
-                />
-              </div>
               <SubmitButton loading={emailLoading}>
-                <FaAt size={12} /> Update Email
+                <FaAt size={12} /> Save Email
               </SubmitButton>
             </form>
           </div>
@@ -229,6 +234,8 @@ export default function SettingsPage() {
             <h2 className="text-sm font-bold text-white">Change Password</h2>
           </div>
           <form onSubmit={pwForm.handleSubmit(handleChangePassword)} className="p-5 space-y-3">
+
+            {/* Current password */}
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
                 Current Password
@@ -246,6 +253,8 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+
+            {/* New password */}
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
                 New Password
@@ -266,9 +275,35 @@ export default function SettingsPage() {
                 <p className="text-red-400 text-xs mt-1">Minimum 8 characters required</p>
               )}
             </div>
+
+            {/* Confirm new password */}
+            <div>
+              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">
+                Confirm New Password
+              </label>
+              <div className="relative">
+                <InputField
+                  type={showNewPw ? "text" : "password"}
+                  {...pwForm.register("confirmPassword", {
+                    required: true,
+                    validate: (val) =>
+                      val === pwForm.getValues("newPassword") || "Passwords do not match",
+                  })}
+                  placeholder="Re-enter new password"
+                  className="pr-10"
+                />
+              </div>
+              {pwForm.formState.errors.confirmPassword && (
+                <p className="text-red-400 text-xs mt-1">
+                  {pwForm.formState.errors.confirmPassword.message as string}
+                </p>
+              )}
+            </div>
+
             <div className="p-4 bg-amber-500/5 border border-amber-500/15 rounded-xl">
               <p className="text-amber-400/80 text-xs">You will be signed out after changing your password.</p>
             </div>
+
             <SubmitButton loading={pwLoading}>
               <FaKey size={12} /> Change Password
             </SubmitButton>

@@ -51,7 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const overdueCount = stats?.data?.overdueRecords ?? 0;
 
   return (
-    <div className="h-screen bg-gray-950 lg:flex overflow-hidden">
+    <div className="min-h-screen bg-gray-950 lg:flex">
 
       <OnboardingTour />
 
@@ -167,11 +167,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       {/* ── Main content ── */}
-      <div className={`w-full flex flex-col h-screen bg-gray-950 transition-all duration-300
+      <div className={`w-full flex flex-col min-h-screen bg-gray-950 transition-all duration-300
         ${sidebarCollapsed ? "lg:ml-[72px] lg:w-[calc(100%-72px)]" : "lg:ml-60 lg:w-[calc(100%-240px)]"}`}>
 
         {/* Topbar */}
-        <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 z-30">
+        <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 sticky top-0 z-30">
           <button onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0">
             <FaBars size={16} />
@@ -233,7 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page content */}
-        <main id="main-content" className="flex-1 p-4 sm:p-5 lg:p-7 overflow-y-auto bg-gray-950">
+        <main id="main-content" className="flex-1 p-4 sm:p-5 lg:p-7 overflow-auto bg-gray-950">
           {children}
         </main>
       </div>
