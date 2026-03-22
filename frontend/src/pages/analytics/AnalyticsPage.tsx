@@ -233,24 +233,22 @@ export default function AnalyticsPage() {
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={monthlyBorrows} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff08" />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fill: "#6b7280", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "#6b7280", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
+                <XAxis dataKey="month" tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "#6b7280", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <Tooltip
-                  {...TOOLTIP_STYLE}
-                  itemStyle={{ color: "#60a5fa" }}
+                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                    contentStyle={{
+                    background: "#111827",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    color: "#fff",
+                    }}
+                    labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                    itemStyle={{ color: "#60a5fa" }}
                 />
                 <Bar dataKey="count" name="Borrows" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
+                </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -277,8 +275,16 @@ export default function AnalyticsPage() {
                   allowDecimals={false}
                 />
                 <Tooltip
-                  {...TOOLTIP_STYLE}
-                  itemStyle={{ color: "#f87171" }}
+                cursor={{ stroke: "rgba(255,255,255,0.08)", strokeWidth: 1 }}
+                contentStyle={{
+                    background: "#111827",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    color: "#fff",
+                }}
+                labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                itemStyle={{ color: "#f87171" }}
                 />
                 <Line
                   type="monotone"
@@ -316,9 +322,16 @@ export default function AnalyticsPage() {
                   ))}
                 </Pie>
                 <Tooltip
-                  {...TOOLTIP_STYLE}
-                  formatter={(value: any, name: any) => [value, CAT_LABELS[name] ?? name]}
-                />
+                    contentStyle={{
+                        background: "#111827",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: "12px",
+                        fontSize: "12px",
+                        color: "#fff",
+                    }}
+                    labelStyle={{ color: "#fff", fontWeight: "bold" }}
+                    formatter={(value: any, name: any) => [value, CAT_LABELS[name] ?? name]}
+                    />
                 <Legend
                   formatter={(value) => CAT_LABELS[value] ?? value}
                   wrapperStyle={{ fontSize: "11px", color: "#9ca3af" }}

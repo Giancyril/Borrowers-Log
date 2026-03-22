@@ -2,8 +2,10 @@ import { Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import sendResponse from "../../global/response";
 import { authService } from "./auth.service";
-import { loginSchema, registerSchema } from "./auth.validate";
-import { z } from "zod";
+import {
+  loginSchema, registerSchema,
+  changePasswordSchema, changeEmailSchema, changeUsernameSchema,
+} from "./auth.validate";
 
 const login = async (req: Request, res: Response) => {
   try {
@@ -43,38 +45,33 @@ const deleteAdmin = async (req: Request, res: Response) => {
   }
 };
 
+// ── Change password ───────────────────────────────────────────────────────────
 const changePassword = async (req: Request, res: Response) => {
   try {
-    const { oldPassword, newPassword } = z.object({
-      oldPassword: z.string().min(1),
-      newPassword: z.string().min(8),
-    }).parse(req.body);
-    const result = await authService.changePassword(req.user!.id, oldPassword, newPassword);
+    const data   = changePasswordSchema.parse(req.body);
+    const result = await authService.changePassword(req.user!.id, data);
     sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Password changed successfully", data: result });
   } catch (err: any) {
     sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });
   }
 };
 
+// ── Change email — no password required ──────────────────────────────────────
 const changeEmail = async (req: Request, res: Response) => {
   try {
-    const { email, password } = z.object({
-      email:    z.string().email(),
-      password: z.string().min(1),
-    }).parse(req.body);
-    const result = await authService.changeEmail(req.user!.id, email, password);
+    const data   = changeEmailSchema.parse(req.body);
+    const result = await authService.changeEmail(req.user!.id, data);
     sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Email changed successfully", data: result });
   } catch (err: any) {
     sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });
   }
 };
 
+// ── Change username ───────────────────────────────────────────────────────────
 const changeUsername = async (req: Request, res: Response) => {
   try {
-    const { username } = z.object({
-      username: z.string().min(3).max(50),
-    }).parse(req.body);
-    const result = await authService.changeUsername(req.user!.id, username);
+    const data   = changeUsernameSchema.parse(req.body);
+    const result = await authService.changeUsername(req.user!.id, data);
     sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Username changed successfully", data: result });
   } catch (err: any) {
     sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });

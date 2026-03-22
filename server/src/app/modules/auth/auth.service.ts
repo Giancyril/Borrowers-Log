@@ -2,7 +2,10 @@ import prisma from "../../config/prisma";
 import { utils } from "../../utils/utils";
 import AppError from "../../global/error";
 import { StatusCodes } from "http-status-codes";
-import { LoginInput, RegisterInput } from "./auth.validate";
+import {
+  LoginInput, RegisterInput,
+  ChangePasswordInput, ChangeEmailInput, ChangeUsernameInput,
+} from "./auth.validate";
 
 const login = async (data: LoginInput) => {
   const user = await prisma.user.findUnique({ where: { email: data.email } });
@@ -52,14 +55,15 @@ const deleteAdmin = async (id: string, requesterId: string) => {
   return prisma.user.delete({ where: { id } });
 };
 
-const changePassword = async (userId: string, oldPassword: string, newPassword: string) => {
+// ── Change password — requires old password verification ──────────────────────
+const changePassword = async (userId: string, data: ChangePasswordInput) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
 
-  const isMatch = await utils.comparePassword(oldPassword, user.password);
+  const isMatch = await utils.comparePassword(data.oldPassword, user.password);
   if (!isMatch) throw new AppError(StatusCodes.UNAUTHORIZED, "Current password is incorrect");
 
-  const hashed = await utils.hashPassword(newPassword);
+  const hashed = await utils.hashPassword(data.newPassword);
   return prisma.user.update({
     where:  { id: userId },
     data:   { password: hashed },
@@ -67,34 +71,33 @@ const changePassword = async (userId: string, oldPassword: string, newPassword: 
   });
 };
 
-const changeEmail = async (userId: string, newEmail: string, password: string) => {
+// ── Change email — no password required ──────────────────────────────────────
+const changeEmail = async (userId: string, data: ChangeEmailInput) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
 
-  const isMatch = await utils.comparePassword(password, user.password);
-  if (!isMatch) throw new AppError(StatusCodes.UNAUTHORIZED, "Password is incorrect");
-
-  const existing = await prisma.user.findUnique({ where: { email: newEmail } });
+  const existing = await prisma.user.findUnique({ where: { email: data.email } });
   if (existing && existing.id !== userId) {
     throw new AppError(StatusCodes.CONFLICT, "Email already in use");
   }
 
   return prisma.user.update({
     where:  { id: userId },
-    data:   { email: newEmail },
+    data:   { email: data.email },
     select: { id: true, email: true, username: true },
   });
 };
 
-const changeUsername = async (userId: string, newUsername: string) => {
-  const existing = await prisma.user.findUnique({ where: { username: newUsername } });
+// ── Change username ───────────────────────────────────────────────────────────
+const changeUsername = async (userId: string, data: ChangeUsernameInput) => {
+  const existing = await prisma.user.findUnique({ where: { username: data.username } });
   if (existing && existing.id !== userId) {
     throw new AppError(StatusCodes.CONFLICT, "Username already taken");
   }
 
   return prisma.user.update({
     where:  { id: userId },
-    data:   { username: newUsername },
+    data:   { username: data.username },
     select: { id: true, email: true, username: true },
   });
 };
