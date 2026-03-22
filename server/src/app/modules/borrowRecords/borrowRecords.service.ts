@@ -17,17 +17,15 @@ const flagOverdue = async () => {
 
 // ── Create borrow record ──────────────────────────────────────────────────────
 const createRecord = async (data: CreateBorrowRecordInput, adminId: string) => {
-  // Check item exists
   const item = await prisma.item.findFirst({ where: { id: data.itemId, isDeleted: false } });
   if (!item) throw new AppError(StatusCodes.NOT_FOUND, "Item not found");
 
-  // Check available quantity
   const agg = await prisma.borrowRecord.aggregate({
     where: { itemId: data.itemId, status: { in: ["ACTIVE", "OVERDUE"] }, isDeleted: false },
     _sum:  { quantityBorrowed: true },
   });
-  const borrowed      = agg._sum.quantityBorrowed ?? 0;
-  const available     = item.totalQuantity - borrowed;
+  const borrowed  = agg._sum.quantityBorrowed ?? 0;
+  const available = item.totalQuantity - borrowed;
 
   if (data.quantityBorrowed > available) {
     throw new AppError(
@@ -109,7 +107,7 @@ const getSingleRecord = async (id: string) => {
   return record;
 };
 
-// ── Update record (before return) ─────────────────────────────────────────────
+// ── Update record ─────────────────────────────────────────────────────────────
 const updateRecord = async (id: string, data: UpdateBorrowRecordInput) => {
   const record = await prisma.borrowRecord.findFirst({ where: { id, isDeleted: false } });
   if (!record) throw new AppError(StatusCodes.NOT_FOUND, "Borrow record not found");
@@ -125,6 +123,7 @@ const updateRecord = async (id: string, data: UpdateBorrowRecordInput) => {
       ...(data.borrowerDepartment && { borrowerDepartment: data.borrowerDepartment }),
       ...(data.purpose            && { purpose:            data.purpose }),
       ...(data.dueDate            && { dueDate:            new Date(data.dueDate) }),
+      ...(data.quantityBorrowed   && { quantityBorrowed:   data.quantityBorrowed }),
       ...(data.conditionOnBorrow  && { conditionOnBorrow:  data.conditionOnBorrow }),
     },
     include: { item: { select: { id: true, name: true, category: true } } },
@@ -158,11 +157,51 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
   });
 };
 
-// ── Delete (soft) ─────────────────────────────────────────────────────────────
+// ── Bulk return ───────────────────────────────────────────────────────────────
+const bulkReturn = async (ids: string[]) => {
+  // Only return ACTIVE or OVERDUE records
+  const eligible = await prisma.borrowRecord.findMany({
+    where: { id: { in: ids }, status: { in: ["ACTIVE", "OVERDUE"] }, isDeleted: false },
+    select: { id: true },
+  });
+  const eligibleIds = eligible.map(r => r.id);
+
+  if (eligibleIds.length === 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No eligible records to return");
+  }
+
+  await prisma.borrowRecord.updateMany({
+    where: { id: { in: eligibleIds } },
+    data:  { status: "RETURNED", actualReturnDate: new Date() },
+  });
+
+  return { returned: eligibleIds.length };
+};
+
+// ── Bulk delete ───────────────────────────────────────────────────────────────
+const bulkDelete = async (ids: string[]) => {
+  const eligible = await prisma.borrowRecord.findMany({
+    where:  { id: { in: ids }, isDeleted: false },
+    select: { id: true },
+  });
+  const eligibleIds = eligible.map(r => r.id);
+
+  if (eligibleIds.length === 0) {
+    throw new AppError(StatusCodes.BAD_REQUEST, "No records found to delete");
+  }
+
+  await prisma.borrowRecord.updateMany({
+    where: { id: { in: eligibleIds } },
+    data:  { isDeleted: true, deletedAt: new Date() },
+  });
+
+  return { deleted: eligibleIds.length };
+};
+
+// ── Delete single (soft) ──────────────────────────────────────────────────────
 const deleteRecord = async (id: string) => {
   const record = await prisma.borrowRecord.findFirst({ where: { id, isDeleted: false } });
   if (!record) throw new AppError(StatusCodes.NOT_FOUND, "Borrow record not found");
-
   return prisma.borrowRecord.update({
     where: { id },
     data:  { isDeleted: true, deletedAt: new Date() },
@@ -180,7 +219,7 @@ const getOverdue = async () => {
     include: { item: { select: { id: true, name: true, category: true } } },
   });
 
-  return records.map((r) => ({
+  return records.map(r => ({
     ...r,
     daysOverdue: Math.floor((now.getTime() - new Date(r.dueDate).getTime()) / 86400000),
   }));
@@ -190,21 +229,106 @@ const getOverdue = async () => {
 const getStats = async () => {
   await flagOverdue();
 
-  const [totalItems, activeRecords, overdueRecords, returnedRecords] = await Promise.all([
+  const now       = new Date();
+  const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow  = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
+  const dayAfter  = new Date(today); dayAfter.setDate(dayAfter.getDate() + 2);
+  const weekStart = new Date(today); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+  const [
+    totalItems,
+    activeRecords,
+    overdueRecords,
+    returnedRecords,
+    dueTodayCount,
+    dueTomorrowCount,
+    borrowsToday,
+    borrowsThisWeek,
+    recentRecords,
+    topItemsRaw,
+  ] = await Promise.all([
     prisma.item.count({ where: { isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "ACTIVE",   isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "OVERDUE",  isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "RETURNED", isDeleted: false } }),
+
+    // Due today — active/overdue records where dueDate falls today
+    prisma.borrowRecord.count({
+      where: {
+        isDeleted: false,
+        status:    { in: ["ACTIVE", "OVERDUE"] },
+        dueDate:   { gte: today, lt: tomorrow },
+      },
+    }),
+
+    // Due tomorrow
+    prisma.borrowRecord.count({
+      where: {
+        isDeleted: false,
+        status:    { in: ["ACTIVE", "OVERDUE"] },
+        dueDate:   { gte: tomorrow, lt: dayAfter },
+      },
+    }),
+
+    // Borrows created today
+    prisma.borrowRecord.count({
+      where: {
+        isDeleted:  false,
+        createdAt:  { gte: today },
+      },
+    }),
+
+    // Borrows created this week
+    prisma.borrowRecord.count({
+      where: {
+        isDeleted: false,
+        createdAt: { gte: weekStart },
+      },
+    }),
+
+    // Recent 5 records
+    prisma.borrowRecord.findMany({
+      where:   { isDeleted: false },
+      orderBy: { createdAt: "desc" },
+      take:    5,
+      include: { item: { select: { id: true, name: true } } },
+    }),
+
+    // Top borrowed items — group by itemId, count, order by count desc
+    prisma.borrowRecord.groupBy({
+      by:      ["itemId"],
+      where:   { isDeleted: false },
+      _count:  { itemId: true },
+      orderBy: { _count: { itemId: "desc" } },
+      take:    5,
+    }),
   ]);
 
-  const recentRecords = await prisma.borrowRecord.findMany({
-    where:   { isDeleted: false },
-    orderBy: { createdAt: "desc" },
-    take:    5,
-    include: { item: { select: { id: true, name: true } } },
+  // Resolve item names for top items
+  const topItemIds = topItemsRaw.map(t => t.itemId);
+  const topItemDetails = await prisma.item.findMany({
+    where:  { id: { in: topItemIds } },
+    select: { id: true, name: true },
   });
+  const nameMap = Object.fromEntries(topItemDetails.map(i => [i.id, i.name]));
+  const topItems = topItemsRaw.map(t => ({
+    itemId:   t.itemId,
+    itemName: nameMap[t.itemId] ?? "Unknown",
+    count:    t._count.itemId,
+  }));
 
-  return { totalItems, activeRecords, overdueRecords, returnedRecords, recentRecords };
+  return {
+    totalItems,
+    activeRecords,
+    overdueRecords,
+    returnedRecords,
+    dueTodayCount,
+    dueTomorrowCount,
+    borrowsToday,
+    borrowsThisWeek,
+    topItems,
+    recentRecords,
+  };
 };
 
 export const borrowRecordsService = {
@@ -213,6 +337,8 @@ export const borrowRecordsService = {
   getSingleRecord,
   updateRecord,
   returnRecord,
+  bulkReturn,
+  bulkDelete,
   deleteRecord,
   getOverdue,
   getStats,

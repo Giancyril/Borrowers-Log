@@ -6,26 +6,41 @@ import auth                        from "../middlewares/auth";
 
 const router = Router();
 
-// ── Auth (public) ─────────────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────────────────────
 router.post("/auth/login",    authController.login);
-router.post("/auth/register", auth(), authController.register); // admin-only after first setup
+router.post("/auth/register", auth(), authController.register);
 
-// ── Items (all admin) ─────────────────────────────────────────────────────────
+// Admin management
+router.get   ("/auth/admins",     auth(), authController.getAdmins);
+router.delete("/auth/admins/:id", auth(), authController.deleteAdmin);
+
+// Account settings
+router.put("/auth/change-password", auth(), authController.changePassword);
+router.put("/auth/change-email",    auth(), authController.changeEmail);
+router.put("/auth/change-username", auth(), authController.changeUsername);
+
+// ── Items ─────────────────────────────────────────────────────────────────────
 router.get   ("/items",     auth(), itemsController.getItems);
 router.get   ("/items/:id", auth(), itemsController.getSingleItem);
 router.post  ("/items",     auth(), itemsController.createItem);
 router.put   ("/items/:id", auth(), itemsController.updateItem);
 router.delete("/items/:id", auth(), itemsController.deleteItem);
 
-// ── Borrow Records (all admin) ────────────────────────────────────────────────
+// ── Borrow Records ────────────────────────────────────────────────────────────
+// Static routes MUST come before /:id
 router.get("/borrow-records/stats",   auth(), borrowRecordsController.getStats);
 router.get("/borrow-records/overdue", auth(), borrowRecordsController.getOverdue);
-router.get("/borrow-records",         auth(), borrowRecordsController.getRecords);
-router.get("/borrow-records/:id",     auth(), borrowRecordsController.getSingleRecord);
 
-router.post  ("/borrow-records",              auth(), borrowRecordsController.createRecord);
-router.put   ("/borrow-records/:id",          auth(), borrowRecordsController.updateRecord);
-router.put   ("/borrow-records/:id/return",   auth(), borrowRecordsController.returnRecord);
-router.delete("/borrow-records/:id",          auth(), borrowRecordsController.deleteRecord);
+// Bulk actions
+router.put   ("/borrow-records/bulk-return", auth(), borrowRecordsController.bulkReturn);
+router.delete("/borrow-records/bulk-delete", auth(), borrowRecordsController.bulkDelete);
+
+// CRUD
+router.get   ("/borrow-records",          auth(), borrowRecordsController.getRecords);
+router.get   ("/borrow-records/:id",      auth(), borrowRecordsController.getSingleRecord);
+router.post  ("/borrow-records",          auth(), borrowRecordsController.createRecord);
+router.put   ("/borrow-records/:id",      auth(), borrowRecordsController.updateRecord);
+router.put   ("/borrow-records/:id/return", auth(), borrowRecordsController.returnRecord);
+router.delete("/borrow-records/:id",      auth(), borrowRecordsController.deleteRecord);
 
 export default router;

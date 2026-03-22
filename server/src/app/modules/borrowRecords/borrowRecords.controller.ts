@@ -58,6 +58,32 @@ const returnRecord = async (req: Request, res: Response) => {
   }
 };
 
+const bulkReturn = async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendResponse(res, { statusCode: 400, success: false, message: "No record IDs provided", data: null });
+    }
+    const result = await borrowRecordsService.bulkReturn(ids);
+    sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: `${result.returned} record(s) marked as returned`, data: result });
+  } catch (err: any) {
+    sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });
+  }
+};
+
+const bulkDelete = async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body as { ids: string[] };
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return sendResponse(res, { statusCode: 400, success: false, message: "No record IDs provided", data: null });
+    }
+    const result = await borrowRecordsService.bulkDelete(ids);
+    sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: `${result.deleted} record(s) deleted`, data: result });
+  } catch (err: any) {
+    sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });
+  }
+};
+
 const deleteRecord = async (req: Request, res: Response) => {
   try {
     await borrowRecordsService.deleteRecord(req.params.id);
@@ -91,6 +117,8 @@ export const borrowRecordsController = {
   getSingleRecord,
   updateRecord,
   returnRecord,
+  bulkReturn,
+  bulkDelete,
   deleteRecord,
   getOverdue,
   getStats,

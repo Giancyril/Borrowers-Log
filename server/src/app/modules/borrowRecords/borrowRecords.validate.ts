@@ -34,6 +34,7 @@ export const updateBorrowRecordSchema = z.object({
   purpose:            z.string().max(500).optional(),
   dueDate:            z.string().or(z.date()).optional(),
   conditionOnBorrow:  z.string().max(300).optional(),
+  quantityBorrowed:   z.number().int().min(1).optional(),
 });
 
 export type CreateBorrowRecordInput  = z.infer<typeof createBorrowRecordSchema>;

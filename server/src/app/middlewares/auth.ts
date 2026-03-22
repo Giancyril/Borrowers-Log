@@ -8,6 +8,7 @@ export interface JwtPayload {
   email:    string;
   role:     "ADMIN";
   username: string;
+  name:     string; // ← added
 }
 
 declare global {
