@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# Env files — ignore local/dev, keep production for Vercel
+.env
+.env.development
+.env.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
