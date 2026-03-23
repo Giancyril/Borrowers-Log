@@ -36,11 +36,10 @@ const inputCls = "w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-x
 const labelCls = "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5";
 
 export default function NewBorrowRecord() {
-  const navigate      = useNavigate();
+  const navigate       = useNavigate();
   const [searchParams] = useSearchParams();
   const sigRef         = useRef<SignatureCanvas>(null);
 
-  // Pre-fill from re-borrow params
   const isReborrow = searchParams.get("reborrow") === "true";
 
   const [step,    setStep]    = useState(0);
@@ -55,7 +54,7 @@ export default function NewBorrowRecord() {
     itemId:             searchParams.get("itemId")             ?? "",
     quantityBorrowed:   Number(searchParams.get("quantity"))   || 1,
     borrowDate:         todayStr(),
-    dueDate:            "",
+    dueDate:            todayStr(),
     conditionOnBorrow:  "",
   });
 
@@ -75,7 +74,7 @@ export default function NewBorrowRecord() {
     if (s === 1) {
       if (!form.itemId) e.itemId = "Select an item";
       if (!form.dueDate) e.dueDate = "Required";
-      else if (new Date(form.dueDate) <= new Date(form.borrowDate)) e.dueDate = "Must be after borrow date";
+      else if (new Date(form.dueDate) < new Date(form.borrowDate)) e.dueDate = "Must be on or after borrow date";
       if (selectedItem && form.quantityBorrowed > selectedItem.availableQuantity)
         e.quantityBorrowed = `Only ${selectedItem.availableQuantity} available`;
     }
@@ -207,13 +206,15 @@ export default function NewBorrowRecord() {
               </div>
               <div>
                 <label className={labelCls}>Borrow Date *</label>
-                <input type="date" value={form.borrowDate} onChange={e => set("borrowDate", e.target.value)}
+                <input type="date" value={form.borrowDate}
+                  onChange={e => set("borrowDate", e.target.value)}
                   className={inputCls} />
               </div>
               <div>
                 <label className={labelCls}>Due Date *</label>
-                <input type="date" value={form.dueDate} min={form.borrowDate}
-                  onChange={e => set("dueDate", e.target.value)} className={inputCls} />
+                <input type="date" value={form.dueDate}
+                  onChange={e => set("dueDate", e.target.value)}
+                  className={inputCls} />
                 {errors.dueDate && <p className="text-red-400 text-xs mt-1">{errors.dueDate}</p>}
               </div>
             </div>
