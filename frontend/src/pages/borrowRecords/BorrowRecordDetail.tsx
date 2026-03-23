@@ -361,98 +361,107 @@ export default function BorrowRecordDetail() {
         <div className="flex items-center gap-3">
 
           <div>
-            <h1 className="text-white text-lg font-bold tracking-tight">Borrow Record</h1>
-            <p className="text-gray-500 text-[11px] font-mono mt-0.5">ID: {record.id.slice(0, 8).toUpperCase()}</p>
+            <h1 className="text-white text-xl font-bold tracking-tight">Borrow Record</h1>
+            <p className="text-gray-500 text-xs font-mono mt-0.5">{record.id.slice(0, 8)}...</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0 pt-0.5">
-          <StatusBadge status={record.status} />
-          {record.status === "OVERDUE" && <FaExclamationTriangle size={13} className="text-red-400 animate-pulse" />}
+        <div className="flex flex-col items-end gap-2 shrink-0">
+          {/* Row 1: status */}
+          <div className="flex items-center gap-2">
+            <StatusBadge status={record.status} />
+            {record.status === "OVERDUE" && (
+              <FaExclamationTriangle size={14} className="text-red-400 animate-pulse" />
+            )}
+          </div>
+          {/* Row 2: action buttons */}
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setShowEdit(true)}
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400" title="Edit">
+              <FaEdit size={11} />
+            </button>
+            <button onClick={() => printSlip(record)}
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400" title="Print Slip">
+              <FaPrint size={11} />
+            </button>
+            <button onClick={handleReborrow}
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400" title="Re-borrow">
+              <FaRedo size={11} />
+            </button>
+            <button onClick={handleDelete}
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-red-400" title="Delete">
+              <FaTrash size={11} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* ── Returned Banner ── */}
-      {record.status === "RETURNED" && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-500/8 border border-emerald-500/20 rounded-xl">
-          <FaCheckCircle size={15} className="text-emerald-400 shrink-0" />
-          <div>
-            <p className="text-emerald-300 text-sm font-semibold">Item Returned</p>
-            <p className="text-emerald-400/60 text-xs mt-0.5">Returned on {fmt(record.actualReturnDate)}</p>
-          </div>
+      {/* ── Borrower Info ── */}
+      <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-white/5 flex items-center justify-between">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Borrower Information</h2>
+          <button
+            onClick={() => navigate(`/borrowers/${encodeURIComponent(record.borrowerName)}`)}
+            className="flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 text-xs font-medium transition-colors">
+            <FaUser size={10} /> View History
+          </button>
         </div>
-      )}
-
-      {/* ── Borrower & Item side by side on md+ ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Borrower Info */}
-        <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
-            <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Borrower</h2>
-            <button
-              onClick={() => navigate(`/borrowers/${encodeURIComponent(record.borrowerName)}`)}
-              className="flex items-center gap-1.5 text-blue-400 hover:text-blue-300 text-[11px] font-medium transition-colors">
-              <FaUser size={9} /> View History
-            </button>
-          </div>
-          <div className="px-5 py-4 space-y-3.5">
-            {[
-              ["Name",       record.borrowerName],
-              ["Email",      record.borrowerEmail      || "—"],
-              ["Department", record.borrowerDepartment || "—"],
-              ["Purpose",    record.purpose            || "—"],
-            ].map(([k, v]) => (
-              <div key={k} className="flex items-start justify-between gap-4">
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold shrink-0 pt-0.5">{k}</p>
-                <p className="text-white text-sm text-right break-all">{v}</p>
-              </div>
-            ))}
-          </div>
+        <div className="px-5 py-4 grid grid-cols-2 gap-4">
+          {[
+            ["Name",       record.borrowerName],
+            ["Email",      record.borrowerEmail      || "—"],
+            ["Department", record.borrowerDepartment || "—"],
+            ["Purpose",    record.purpose            || "—"],
+          ].map(([k, v]) => (
+            <div key={k}>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{k}</p>
+              <p className="text-white text-sm mt-0.5 break-words">{v}</p>
+            </div>
+          ))}
         </div>
+      </div>
 
-        {/* Item & Dates */}
-        <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
-          <div className="px-5 py-3 border-b border-white/5">
-            <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Item & Dates</h2>
-          </div>
-          <div className="px-5 py-4 space-y-3.5">
-            {([
-              ["Item",             record.item?.name ?? "—"],
-              ["Qty",              String(record.quantityBorrowed)],
-              ["Borrowed",         fmt(record.borrowDate)],
-              ["Due",              fmt(record.dueDate)],
-              ["Returned",         fmt(record.actualReturnDate)],
-              ["Condition (In)",   record.conditionOnBorrow  || "—"],
-              ...(record.conditionOnReturn ? [["Condition (Out)", record.conditionOnReturn]] : []),
-              ...(record.damageNotes       ? [["Damage Notes",    record.damageNotes]]       : []),
-            ] as [string, string][]).map(([k, v]) => (
-              <div key={k} className="flex items-start justify-between gap-4">
-                <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold shrink-0 pt-0.5">{k}</p>
-                <p className="text-white text-sm text-right break-all">{v}</p>
-              </div>
-            ))}
-          </div>
+      {/* ── Item & Dates ── */}
+      <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
+        <div className="px-5 py-3.5 border-b border-white/5">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Item & Dates</h2>
+        </div>
+        <div className="px-5 py-4 grid grid-cols-2 gap-4">
+          {([
+            ["Item",               record.item?.name],
+            ["Quantity",           String(record.quantityBorrowed)],
+            ["Condition (Borrow)", record.conditionOnBorrow || "—"],
+            ["Borrow Date",        fmt(record.borrowDate)],
+            ["Due Date",           fmt(record.dueDate)],
+            ["Return Date",        fmt(record.actualReturnDate)],
+            ...(record.conditionOnReturn ? [["Condition (Return)", record.conditionOnReturn]] : []),
+            ...(record.damageNotes      ? [["Damage Notes",        record.damageNotes]]       : []),
+          ] as [string, string][]).map(([k, v]) => (
+            <div key={k}>
+              <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{k}</p>
+              <p className="text-white text-sm mt-0.5 break-words">{v}</p>
+            </div>
+          ))}
         </div>
       </div>
 
       {/* ── Signatures ── */}
       <div className="bg-gray-900 border border-white/5 rounded-2xl overflow-hidden">
-        <div className="px-5 py-3 border-b border-white/5">
-          <h2 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Signatures</h2>
+        <div className="px-5 py-3.5 border-b border-white/5">
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Signatures</h2>
         </div>
         <div className="px-5 py-4 grid grid-cols-2 gap-4">
           <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2">On Borrow</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2">Borrow Signature</p>
             {record.borrowSignature
-              ? <img src={record.borrowSignature} alt="Borrow signature" className="w-full h-28 object-contain bg-gray-800/60 rounded-xl border border-white/5 p-2" />
-              : <div className="w-full h-28 bg-gray-800/60 rounded-xl border border-white/5 flex items-center justify-center text-gray-600 text-xs">No signature</div>
+              ? <img src={record.borrowSignature} alt="Borrow signature" className="w-full h-28 object-contain bg-gray-800 rounded-xl border border-white/5 p-2" />
+              : <div className="w-full h-28 bg-gray-800 rounded-xl border border-white/5 flex items-center justify-center text-gray-600 text-xs">No signature</div>
             }
           </div>
           <div>
-            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2">On Return</p>
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2">Return Signature</p>
             {record.returnSignature
-              ? <img src={record.returnSignature} alt="Return signature" className="w-full h-28 object-contain bg-gray-800/60 rounded-xl border border-white/5 p-2" />
-              : <div className="w-full h-28 bg-gray-800/60 rounded-xl border border-dashed border-white/10 flex items-center justify-center text-gray-600 text-xs">
+              ? <img src={record.returnSignature} alt="Return signature" className="w-full h-28 object-contain bg-gray-800 rounded-xl border border-white/5 p-2" />
+              : <div className="w-full h-28 bg-gray-800 rounded-xl border border-dashed border-white/10 flex items-center justify-center text-gray-600 text-xs">
                   {canReturn ? "Pending return" : "—"}
                 </div>
             }
@@ -460,33 +469,21 @@ export default function BorrowRecordDetail() {
         </div>
       </div>
 
-      {/* ── Actions ── */}
-      <div className="space-y-2">
-        {canReturn && (
-          <button onClick={() => setShowReturn(true)}
-            className="w-full inline-flex items-center justify-center gap-2 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold rounded-xl transition-all">
-            <FaUndo size={11} /> Process Return
-          </button>
-        )}
-        <div className="grid grid-cols-4 gap-2">
-          <button onClick={() => setShowEdit(true)}
-            className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-[10px] font-bold rounded-xl transition-all">
-            <FaEdit size={10} /> Edit
-          </button>
-          <button onClick={handleReborrow}
-            className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-[10px] font-bold rounded-xl transition-all">
-            <FaRedo size={10} /> Re-borrow
-          </button>
-          <button onClick={() => printSlip(record)}
-            className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-[10px] font-bold rounded-xl transition-all">
-            <FaPrint size={10} /> Print Slip
-          </button>
-          <button onClick={handleDelete}
-            className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-red-500/15 hover:bg-red-500/25 text-red-400 text-[10px] font-bold rounded-xl transition-all">
-            <FaTrash size={10} /> Delete
-          </button>
+      {/* ── Process Return ── */}
+      {canReturn && (
+        <button onClick={() => setShowReturn(true)}
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold rounded-xl transition-all max-w-sm">
+          <FaUndo size={11} /> Process Return
+        </button>
+      )}
+
+      {/* ── Returned Banner ── */}
+      {record.status === "RETURNED" && (
+        <div className="flex items-center gap-2 px-4 py-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl">
+          <FaCheckCircle size={14} className="text-emerald-400 shrink-0" />
+          <p className="text-emerald-300/80 text-sm">This item was returned on {fmt(record.actualReturnDate)}.</p>
         </div>
-      </div>
+      )}
     </div>
   );
 }
