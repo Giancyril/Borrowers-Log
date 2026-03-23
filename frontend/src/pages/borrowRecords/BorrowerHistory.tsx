@@ -37,13 +37,10 @@ export default function BorrowerHistory() {
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)}
-            className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
-            <FaArrowLeft size={12} />
-          </button>
+      
           <div>
             <h1 className="text-white text-xl font-bold tracking-tight">Borrower History</h1>
-            <p className="text-gray-500 text-xs mt-0.5">{decoded}</p>
+            <h2 className="text-gray-500 text-xs mt-0.5">{decoded}</h2>
           </div>
         </div>
       </div>
