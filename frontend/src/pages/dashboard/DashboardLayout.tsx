@@ -141,29 +141,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        {/* User footer */}
-        <div className="border-t border-white/5 px-3 py-3">
-          {!sidebarCollapsed ? (
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
-                <span className="text-white font-bold text-sm">{initial}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-semibold truncate">{user?.name || user?.username}</p>
-                <p className="text-gray-500 text-xs">{user?.role || "ADMIN"}</p>
-              </div>
-              <button onClick={() => signOut(navigate)} title="Sign out"
-                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                <FaSignOutAlt size={13} />
-              </button>
-            </div>
-          ) : (
-            <button onClick={() => signOut(navigate)} title="Sign out"
-              className="w-full flex justify-center p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-              <FaSignOutAlt size={13} />
-            </button>
-          )}
-        </div>
       </aside>
 
       {/* ── Main content ── */}
