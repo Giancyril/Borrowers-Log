@@ -17,7 +17,7 @@ export const createBorrowRecordSchema = z.object({
   conditionOnBorrow:  z.string().max(300).optional().default(""),
   borrowSignature:    signatureSchema,
 }).refine(
-  (d) => new Date(d.dueDate) > new Date(d.borrowDate),
+  (d) => new Date(d.dueDate) >= new Date(d.borrowDate),
   { message: "Due date must be after borrow date", path: ["dueDate"] }
 );
 
