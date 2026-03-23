@@ -24,6 +24,10 @@ const createLog = async (params: LogParams) => {
   });
 };
 
+const clearAll = async () => {
+  return prisma.activityLog.deleteMany({});
+};
+
 const getLogs = async (query: Record<string, any>) => {
   const page  = Number(query.page)  || 1;
   const limit = Number(query.limit) || 20;
@@ -41,4 +45,5 @@ const getLogs = async (query: Record<string, any>) => {
   return { logs, total };
 };
 
-export const activityLogService = { createLog, getLogs };
+export const activityLogService = { createLog, getLogs, clearAll };
+

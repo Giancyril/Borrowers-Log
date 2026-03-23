@@ -14,4 +14,13 @@ const getLogs = async (req: Request, res: Response) => {
   }
 };
 
-export const activityLogController = { getLogs };
+const clearAll = async (_req: Request, res: Response) => {
+  try {
+    await activityLogService.clearAll();
+    sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Activity logs cleared", data: null });
+  } catch (err: any) {
+    sendResponse(res, { statusCode: 400, success: false, message: err.message, data: null });
+  }
+};
+
+export const activityLogController = { getLogs, clearAll };
