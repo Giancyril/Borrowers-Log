@@ -158,22 +158,6 @@ export default function ItemsPage() {
         </button>
       </div>
 
-      {/* ── Low stock alert ── */}
-      {!isLoading && (outOfStock > 0 || lowStock > 0) && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-amber-500/8 border border-amber-500/20 rounded-xl">
-          <FaExclamationTriangle size={13} className="text-amber-400 shrink-0" />
-          <p className="text-amber-300 text-xs font-semibold flex gap-2 flex-wrap">
-            {outOfStock > 0 && (
-              <span className="text-red-400">{outOfStock} out of stock</span>
-            )}
-            {outOfStock > 0 && lowStock > 0 && <span className="text-amber-500">·</span>}
-            {lowStock > 0 && (
-              <span>{lowStock} low stock</span>
-            )}
-          </p>
-        </div>
-      )}
-
       {/* ── Filters ── */}
       <div className="flex gap-2">
         <div className="relative flex-1">

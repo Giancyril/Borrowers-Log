@@ -114,7 +114,7 @@ export default function Login() {
               />
               <p className="text-white font-bold text-sm tracking-wide">NBSC SAS Borrowers Log</p>
             </div>
-            <p className="text-gray-500 text-sm mt-1">Enter your credentials to access the admin panel</p>
+            <p className="text-gray-500 text-sm mt-1">Enter your credentials to continue</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

@@ -107,10 +107,7 @@ export default function NewBorrowRecord() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate(-1)}
-          className="w-8 h-8 rounded-lg bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-          <FaArrowLeft size={12} />
-        </button>
+        
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-white">
@@ -196,7 +193,7 @@ export default function NewBorrowRecord() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className={labelCls}>Quantity *</label>
                 <input type="number" min={1} max={selectedItem?.availableQuantity ?? 99}
@@ -267,18 +264,18 @@ export default function NewBorrowRecord() {
           {step > 0 && (
             <button onClick={back}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/8 text-gray-300 hover:bg-gray-800 text-sm font-medium transition-all">
-              <FaArrowLeft size={11} /> Back
+              Back
             </button>
           )}
           {step < 2 ? (
             <button onClick={next}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all">
-              Continue <FaArrowRight size={11} />
+              Continue 
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={isLoading || !sigDone}
               className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-all">
-              {isLoading ? "Saving..." : <><FaCheck size={11} /> Save Record</>}
+              {isLoading ? "Saving..." : <>Save Record</>}
             </button>
           )}
         </div>

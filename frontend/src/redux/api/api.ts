@@ -104,6 +104,10 @@ const api = baseApi.injectEndpoints({
       query: (params) => ({ url: "/activity-logs", params }),
       providesTags: ["activityLogs"],
     }),
+    clearActivityLogs: build.mutation<void, void>({
+      query: () => ({ url: "/activity-logs", method: "DELETE" }),
+      invalidatesTags: ["activityLogs"],
+    }),
   }),
 });
 
@@ -133,4 +137,5 @@ export const {
   useBulkReturnRecordsMutation,
   useBulkDeleteRecordsMutation,
   useGetActivityLogsQuery,
+  useClearActivityLogsMutation,
 } = api;

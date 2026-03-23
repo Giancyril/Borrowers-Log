@@ -1,20 +1,23 @@
 import { useState } from "react";
-import { useGetActivityLogsQuery } from "../../redux/api/api";
+import { useGetActivityLogsQuery, useClearActivityLogsMutation } from "../../redux/api/api";
 import { FaHistory, FaUser, FaTrash, FaUndo, FaEdit, FaPlus, FaShieldAlt } from "react-icons/fa";
 import type { ActivityLog } from "../../types/types";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { useConfirm } from "../../hooks/useConfirm";
+import { toast } from "react-toastify";
 
 const ACTION_CONFIG: Record<string, { label: string; color: string; bg: string; icon: React.ElementType }> = {
-  CREATED:          { label: "Created",          color: "text-blue-400",    bg: "bg-blue-500/10 border-blue-500/20",    icon: FaPlus      },
-  UPDATED:          { label: "Updated",          color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",  icon: FaEdit      },
-  RETURNED:         { label: "Returned",         color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", icon: FaUndo   },
-  DELETED:          { label: "Deleted",          color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",      icon: FaTrash     },
-  BULK_RETURNED:    { label: "Bulk Returned",    color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", icon: FaUndo   },
-  BULK_DELETED:     { label: "Bulk Deleted",     color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",      icon: FaTrash     },
-  LOGIN:            { label: "Login",            color: "text-cyan-400",    bg: "bg-cyan-500/10 border-cyan-500/20",    icon: FaUser      },
-  REGISTERED:       { label: "Registered",       color: "text-purple-400",  bg: "bg-purple-500/10 border-purple-500/20", icon: FaUser     },
-  CHANGED_PASSWORD: { label: "Changed Password", color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",  icon: FaShieldAlt },
-  CHANGED_EMAIL:    { label: "Changed Email",    color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",  icon: FaShieldAlt },
-  CHANGED_USERNAME: { label: "Changed Username", color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",  icon: FaShieldAlt },
+  CREATED:          { label: "Created",          color: "text-blue-400",    bg: "bg-blue-500/10 border-blue-500/20",       icon: FaPlus      },
+  UPDATED:          { label: "Updated",          color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     icon: FaEdit      },
+  RETURNED:         { label: "Returned",         color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", icon: FaUndo      },
+  DELETED:          { label: "Deleted",          color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",         icon: FaTrash     },
+  BULK_RETURNED:    { label: "Bulk Returned",    color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/20", icon: FaUndo      },
+  BULK_DELETED:     { label: "Bulk Deleted",     color: "text-red-400",     bg: "bg-red-500/10 border-red-500/20",         icon: FaTrash     },
+  LOGIN:            { label: "Login",            color: "text-cyan-400",    bg: "bg-cyan-500/10 border-cyan-500/20",       icon: FaUser      },
+  REGISTERED:       { label: "Registered",       color: "text-purple-400",  bg: "bg-purple-500/10 border-purple-500/20",   icon: FaUser      },
+  CHANGED_PASSWORD: { label: "Changed Password", color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     icon: FaShieldAlt },
+  CHANGED_EMAIL:    { label: "Changed Email",    color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     icon: FaShieldAlt },
+  CHANGED_USERNAME: { label: "Changed Username", color: "text-amber-400",   bg: "bg-amber-500/10 border-amber-500/20",     icon: FaShieldAlt },
 };
 
 const fmtTime = (d: string) =>
@@ -24,7 +27,7 @@ const fmtTime = (d: string) =>
   });
 
 const timeAgo = (d: string) => {
-  const diff = Date.now() - new Date(d).getTime();
+  const diff  = Date.now() - new Date(d).getTime();
   const mins  = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days  = Math.floor(diff / 86400000);
@@ -36,24 +39,61 @@ const timeAgo = (d: string) => {
 
 export default function ActivityLogsPage() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useGetActivityLogsQuery({ page, limit: 20 });
+  const { data, isLoading }                   = useGetActivityLogsQuery({ page, limit: 20 });
+  const [clearLogs, { isLoading: clearing }]  = useClearActivityLogsMutation();
+  const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
+
   const logs = (data?.data ?? []) as ActivityLog[];
   const meta = data?.meta;
+
+  const handleClearAll = async () => {
+    const ok = await confirm({
+      title:       "Clear Activity Logs",
+      message:     "Permanently delete all activity logs? This cannot be undone.",
+      confirmText: "Clear All",
+      variant:     "danger",
+    });
+    if (!ok) return;
+    try {
+      await clearLogs().unwrap();
+      toast.success("Activity logs cleared");
+      setPage(1);
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to clear logs");
+    }
+  };
 
   return (
     <div className="space-y-5">
 
+      <ConfirmDialog
+        isOpen={isOpen}
+        title={options.title}
+        message={options.message}
+        confirmText={options.confirmText}
+        cancelText={options.cancelText}
+        variant={options.variant}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
+      />
+
       {/* ── Header ── */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-        
-          <div>
-            <h1 className="text-white text-xl font-bold tracking-tight">Activity Logs</h1>
-            <p className="text-gray-500 text-xs mt-0.5">
-              {meta?.total ?? 0} action{(meta?.total ?? 0) !== 1 ? "s" : ""} recorded
-            </p>
-          </div>
+        <div>
+          <h1 className="text-white text-xl font-bold tracking-tight">Activity Logs</h1>
+          <p className="text-gray-500 text-xs mt-0.5">
+            {meta?.total ?? 0} action{(meta?.total ?? 0) !== 1 ? "s" : ""} recorded
+          </p>
         </div>
+        {logs.length > 0 && (
+          <button
+            onClick={handleClearAll}
+            disabled={clearing}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold rounded-xl transition-all disabled:opacity-50">
+            <FaTrash size={10} />
+            {clearing ? "Clearing..." : "Clear All"}
+          </button>
+        )}
       </div>
 
       {/* ── Log list ── */}
@@ -81,10 +121,11 @@ export default function ActivityLogsPage() {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {logs.map(log => {
-              const cfg = ACTION_CONFIG[log.action] ?? ACTION_CONFIG["UPDATED"];
+              const cfg  = ACTION_CONFIG[log.action] ?? ACTION_CONFIG["UPDATED"];
               const Icon = cfg.icon;
               return (
                 <div key={log.id} className="hover:bg-white/[0.02] transition-colors">
+
                   {/* Desktop */}
                   <div className="hidden sm:grid grid-cols-12 gap-4 items-center px-5 py-3.5">
                     <div className="col-span-2">
@@ -137,6 +178,7 @@ export default function ActivityLogsPage() {
                       </div>
                     </div>
                   </div>
+
                 </div>
               );
             })}
