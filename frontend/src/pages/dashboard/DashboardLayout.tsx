@@ -70,44 +70,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         w-60`}>
 
         {/* Logo */}
-        <div className={`flex items-center h-16 border-b border-white/5 px-4 shrink-0 ${sidebarCollapsed ? "justify-center" : "justify-between"}`}>
-          {!sidebarCollapsed && (
-            <div className="flex items-center gap-2.5">
+        <div className="px-5 border-b border-white/5 shrink-0 h-14 flex items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
               <img
                 src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
-                alt="NBSC SAS Logo"
-                className="w-8 h-8 object-contain"
-                onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                alt="NBSC"
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.style.display = "none";
+                  const fb = img.nextElementSibling as HTMLElement | null;
+                  if (fb) fb.style.display = "flex";
+                }}
               />
-              <div className="leading-tight">
-                <p className="text-white text-sm font-semibold tracking-widest">NBSC SAS</p>
-                <p className="text-gray-500 text-[10px] uppercase tracking-widest">Borrowers Log</p>
-              </div>
+              <span
+                className="text-blue-400 text-xs font-black select-none w-full h-full items-center justify-center"
+                style={{ display: "none" }}
+              >N</span>
             </div>
-          )}
-          {sidebarCollapsed && (
-            <img
-              src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
-              alt="NBSC SAS Logo"
-              className="w-8 h-8 object-contain"
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          )}
-          <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-white p-1">
-            <FaTimes size={14} />
-          </button>
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className={`hidden lg:flex items-center justify-center w-6 h-6 rounded-md text-gray-500 hover:text-white hover:bg-white/5 transition-colors ${sidebarCollapsed ? "mx-auto mt-1" : ""}`}>
-            {sidebarCollapsed ? <FaChevronRight size={10} /> : <FaChevronLeft size={10} />}
-          </button>
+            <div className="min-w-0">
+              <p className="text-white text-sm font-bold tracking-widest">NBSC SAS</p>
+              <p className="text-gray-500 text-[9px] uppercase tracking-widest">Borrowers Log</p>
+            </div>
+          </div>
         </div>
+        {sidebarCollapsed && (
+          <img
+            src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
+            alt="NBSC SAS Logo"
+            className="w-8 h-8 object-contain"
+            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+        )}
+        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-white p-1">
+          <FaTimes size={14} />
+        </button>
+        
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          {!sidebarCollapsed && (
-            <p className="text-[10px] uppercase tracking-widest text-gray-600 font-medium px-2 mb-3">Menu</p>
-          )}
+    
           {menu.map(({ label, icon: Icon, path, exact }) => {
             const active = isActive(path, exact);
             return (
@@ -148,59 +152,75 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         ${sidebarCollapsed ? "lg:ml-[72px] lg:w-[calc(100%-72px)]" : "lg:ml-60 lg:w-[calc(100%-240px)]"}`}>
 
         {/* Topbar */}
-        <header className="h-16 bg-gray-900 flex items-center px-4 sm:px-5 gap-3 shrink-0 sticky top-0 z-30">
-          <button onClick={() => setSidebarOpen(true)}
-            className="lg:hidden text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors shrink-0">
-            <FaBars size={16} />
+        <header className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-white/5 px-4 lg:px-6 h-14 flex items-center gap-3">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0"
+          >
+            <FaBars size={13} />
           </button>
 
-          <div className="flex items-center gap-2.5 select-none">
-            <img
-              src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
-              alt="NBSC SAS"
-              className="w-9 h-9 object-contain shrink-0"
-              onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-            <div className="leading-tight">
-              <p className="text-white text-sm font-black tracking-widest leading-none">NBSC SAS</p>
-              <p className="text-gray-500 text-[10px] uppercase tracking-widest hidden sm:block">Borrowers Log</p>
+          {/* Logo in topbar — mobile only */}
+          <div className="flex lg:hidden items-center gap-2.5 flex-1">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+              <img
+                src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
+                alt="NBSC"
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  img.style.display = "none";
+                }}
+              />
+              <span
+                className="text-blue-400 text-[9px] font-black w-full h-full items-center justify-center"
+                style={{ display: "none" }}
+              >N</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-xs font-semibold truncate">NBSC SAS</p>
+              <p className="text-gray-400 text-[10px] truncate uppercase">Borrowers Log</p>
             </div>
           </div>
 
-          <div className="flex-1" />
+          <div className="hidden lg:flex flex-1" />
 
-          <div id="profile-dropdown-anchor" className="relative flex items-center">
-            <button onClick={() => setProfileOpen(p => !p)}
-              className="flex items-center gap-2 cursor-pointer group focus:outline-none">
-              <div className="relative">
-                <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-full flex items-center justify-center border-2 border-gray-700 group-hover:border-blue-400 transition-all shadow-lg">
-                  <span className="text-white font-bold text-sm">{initial}</span>
-                </div>
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-gray-900 rounded-full" />
+          {/* Profile */}
+          <div id="profile-dropdown-anchor" className="relative pl-3 border-l border-l-blue-500/30">
+            <button
+              onClick={() => setProfileOpen((p) => !p)}
+              className="flex items-center gap-2 focus:outline-none"
+            >
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
+                <span className="text-white text-[10px] font-black">{initial}</span>
               </div>
-              <div className="hidden sm:block text-left">
-                <p className="text-white text-sm font-semibold leading-none">{user?.username || user?.name || "Admin"}</p>
-                <p className="text-gray-500 text-xs mt-0.5">{user?.role || "ADMIN"}</p>
-              </div>
-              <FaChevronDown size={10} className={`text-gray-500 hidden sm:block transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+              <span className="hidden sm:block text-white text-xs font-semibold max-w-[120px] truncate">
+                {user?.username || user?.name || "Admin"}
+              </span>
+              <FaChevronDown
+                size={9}
+                className={`hidden sm:block text-gray-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
+              />
             </button>
 
             {profileOpen && (
-              <div className="absolute right-0 top-12 w-48 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+              <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
                 <div className="px-4 py-3 border-b border-white/5">
-                  <p className="text-white text-sm font-semibold truncate">{user?.username || user?.name || "Admin"}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{user?.role || "ADMIN"}</p>
+                  <p className="text-white text-xs font-semibold truncate">{user?.username || user?.name || " "}</p>
+                  <p className="text-gray-500 text-[10px] mt-0.5 truncate">{user?.email || ""}</p>
                 </div>
                 <div className="py-1">
                   <Link to="/settings" onClick={() => setProfileOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-sm">
-                    <FaCog size={13} className="text-gray-400 shrink-0" />
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-xs"
+                  >
+                    <FaCog size={11} className="text-gray-400 shrink-0" />
                     Settings
                   </Link>
                   <div className="mx-3 my-1 border-t border-white/5" />
                   <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-sm">
-                    <FaSignOutAlt size={13} className="text-red-400 shrink-0" />
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs"
+                  >
+                    <FaSignOutAlt size={11} className="text-red-400 shrink-0" />
                     Sign Out
                   </button>
                 </div>
