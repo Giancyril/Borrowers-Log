@@ -555,6 +555,55 @@ const getStats = async () => {
   };
 };
 
+// ── Get all borrowers ─────────────────────────────────────────────────────────
+const getBorrowers = async () => {
+  await flagOverdue();
+
+  const records = await prisma.borrowRecord.findMany({
+    where: { isDeleted: false },
+    select: { 
+      borrowerName: true, 
+      borrowerDepartment: true, 
+      borrowerEmail: true,
+      status: true,
+      borrowDate: true,
+    }
+  });
+
+  const borrowersMap: Record<string, any> = {};
+
+  records.forEach(r => {
+    const name = r.borrowerName;
+    if (!borrowersMap[name]) {
+      borrowersMap[name] = {
+        name: r.borrowerName,
+        department: r.borrowerDepartment || "Unknown",
+        email: r.borrowerEmail || "",
+        totalBorrows: 0,
+        activeBorrows: 0,
+        overdueBorrows: 0,
+        returnedBorrows: 0,
+        lastBorrowDate: r.borrowDate
+      };
+    }
+    const b = borrowersMap[name];
+    b.totalBorrows++;
+    if (r.status === "ACTIVE") b.activeBorrows++;
+    else if (r.status === "OVERDUE") b.overdueBorrows++;
+    else if (r.status === "RETURNED") b.returnedBorrows++;
+    
+    if (new Date(r.borrowDate) > new Date(b.lastBorrowDate)) {
+      b.lastBorrowDate = r.borrowDate;
+    }
+    if (b.department === "Unknown" && r.borrowerDepartment) b.department = r.borrowerDepartment;
+    if (!b.email && r.borrowerEmail) b.email = r.borrowerEmail;
+  });
+
+  return Object.values(borrowersMap).sort((a, b) => 
+    new Date(b.lastBorrowDate).getTime() - new Date(a.lastBorrowDate).getTime()
+  );
+};
+
 export const borrowRecordsService = {
   createRecord,
   getRecords,
@@ -566,4 +615,5 @@ export const borrowRecordsService = {
   deleteRecord,
   getOverdue,
   getStats,
+  getBorrowers,
 };

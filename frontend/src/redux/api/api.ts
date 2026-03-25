@@ -75,6 +75,10 @@ const api = baseApi.injectEndpoints({
       query: (name: string) => ({ url: "/borrow-records", params: { search: name, limit: 100 } }),
       providesTags: ["borrowRecords"],
     }),
+    getBorrowers: build.query({
+      query: () => "/borrowers",
+      providesTags: ["borrowRecords"],
+    }),
     createBorrowRecord: build.mutation({
       query: (body) => ({ url: "/borrow-records", method: "POST", body }),
       invalidatesTags: ["borrowRecords", "items", "stats"],
@@ -130,6 +134,7 @@ export const {
   useGetOverdueRecordsQuery,
   useGetDashboardStatsQuery,
   useGetBorrowerHistoryQuery,
+  useGetBorrowersQuery,
   useCreateBorrowRecordMutation,
   useUpdateBorrowRecordMutation,
   useReturnBorrowRecordMutation,

@@ -111,6 +111,15 @@ const getStats = async (_req: Request, res: Response) => {
   }
 };
 
+const getBorrowers = async (_req: Request, res: Response) => {
+  try {
+    const result = await borrowRecordsService.getBorrowers();
+    sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Borrowers retrieved", data: result });
+  } catch (err: any) {
+    sendResponse(res, { statusCode: 400, success: false, message: err.message, data: null });
+  }
+};
+
 export const borrowRecordsController = {
   createRecord,
   getRecords,
@@ -122,4 +131,5 @@ export const borrowRecordsController = {
   deleteRecord,
   getOverdue,
   getStats,
+  getBorrowers,
 };

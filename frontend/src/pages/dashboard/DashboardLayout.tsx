@@ -10,21 +10,21 @@ import { useGetDashboardStatsQuery } from "../../redux/api/api";
 import OnboardingTour from "../../components/ui/OnboardingTour";
 
 const menu = [
-  { label: "Overview",       icon: FaTachometerAlt,       path: "/dashboard",     exact: true },
-  { label: "Inventory",      icon: FaBoxOpen,             path: "/items"                      },
-  { label: "Borrow Records", icon: FaClipboardList,       path: "/borrow-records"             },
-  { label: "Overdue",        icon: FaExclamationTriangle, path: "/overdue"                    },
-  { label: "Analytics",      icon: FaChartBar,            path: "/analytics"                  },
-  { label: "Activity Logs",  icon: FaHistory,             path: "/activity-logs"              },
+  { label: "Overview", icon: FaTachometerAlt, path: "/dashboard", exact: true },
+  { label: "Inventory", icon: FaBoxOpen, path: "/items" },
+  { label: "Borrow Records", icon: FaClipboardList, path: "/borrow-records" },
+  { label: "Overdue", icon: FaExclamationTriangle, path: "/overdue" },
+  { label: "Analytics", icon: FaChartBar, path: "/analytics" },
+  { label: "Activity Logs", icon: FaHistory, path: "/activity-logs" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const location  = useLocation();
-  const navigate  = useNavigate();
-  const user      = useAdminUser();
-  const [sidebarOpen,      setSidebarOpen]      = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const user = useAdminUser();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [profileOpen,      setProfileOpen]      = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const { data: stats } = useGetDashboardStatsQuery(undefined);
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
@@ -70,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         w-60`}>
 
         {/* Logo */}
-        <div className="px-5 border-b border-white/5 shrink-0 h-14 flex items-center">
+        <div className="px-5 border-b border-white/5 shrink-0 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden">
               <img
@@ -90,28 +90,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >N</span>
             </div>
             <div className="min-w-0">
-              <p className="text-white text-sm font-bold tracking-widest">NBSC SAS</p>
-              <p className="text-gray-500 text-[9px] uppercase tracking-widest">Borrowers Log</p>
+              <p className="text-white text-sm font-bold tracking-widest leading-none">NBSC SAS</p>
+              <p className="text-gray-500 text-[9px] uppercase tracking-widest mt-0.5">Borrowers Log</p>
             </div>
           </div>
+          
+          {/* Mobile Close Button */}
+          <button onClick={() => setSidebarOpen(false)}
+            className="lg:hidden w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors">
+            <FaTimes size={16} />
+          </button>
         </div>
-        {sidebarCollapsed && (
-          <img
-            src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
-            alt="NBSC SAS Logo"
-            className="w-8 h-8 object-contain"
-            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        )}
-        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-white p-1">
-          <FaTimes size={14} />
-        </button>
-        
+
+
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-    
+
           {menu.map(({ label, icon: Icon, path, exact }) => {
             const active = isActive(path, exact);
             return (
@@ -163,24 +159,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Logo in topbar — mobile only */}
           <div className="flex lg:hidden items-center gap-2.5 flex-1">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-              <img
-                src="https://nbsc.edu.ph/wp-content/uploads/2024/03/cropped-NBSC_NewLogo_icon.png"
-                alt="NBSC"
-                className="w-6 h-6 object-contain"
-                onError={(e) => {
-                  const img = e.currentTarget;
-                  img.style.display = "none";
-                }}
-              />
+
               <span
                 className="text-blue-400 text-[9px] font-black w-full h-full items-center justify-center"
                 style={{ display: "none" }}
               >N</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-xs font-semibold truncate">NBSC SAS</p>
-              <p className="text-gray-400 text-[10px] truncate uppercase">Borrowers Log</p>
-            </div>
+
           </div>
 
           <div className="hidden lg:flex flex-1" />

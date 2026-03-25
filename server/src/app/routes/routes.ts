@@ -36,6 +36,7 @@ router.put   ("/borrow-records/bulk-return", auth(), borrowRecordsController.bul
 router.delete("/borrow-records/bulk-delete", auth(), borrowRecordsController.bulkDelete);
 
 // CRUD
+router.get   ("/borrowers",               auth(), borrowRecordsController.getBorrowers);
 router.get   ("/borrow-records",          auth(), borrowRecordsController.getRecords);
 router.get   ("/borrow-records/:id",      auth(), borrowRecordsController.getSingleRecord);
 router.post  ("/borrow-records",          auth(), borrowRecordsController.createRecord);
