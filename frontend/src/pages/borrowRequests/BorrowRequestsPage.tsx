@@ -140,7 +140,8 @@ export default function BorrowRequestsPage() {
         </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1 p-1 bg-gray-900 border border-white/5 rounded-xl w-fit">
+      <div className="flex justify-center">
+        <div className="flex items-center gap-1 p-1 bg-gray-900 border border-white/5 rounded-xl w-fit">
         {(["ALL", "APPROVED", "REJECTED", "PENDING"] as const).map((s) => (
           <button
             key={s}
@@ -155,6 +156,7 @@ export default function BorrowRequestsPage() {
           </button>
         ))}
       </div>
+     </div>
 
       {/* List */}
       {isLoading ? (
