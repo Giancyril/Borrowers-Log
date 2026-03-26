@@ -264,7 +264,7 @@ export default function BorrowRequestForm() {
 
           <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3">
             <p className="text-amber-300/80 text-xs leading-relaxed">
-              ℹ️ Your request will be reviewed by the admin before it becomes an
+              Your request will be reviewed by the admin before it becomes an
               active borrow record. You'll be notified of the outcome.
             </p>
           </div>

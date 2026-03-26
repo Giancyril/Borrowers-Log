@@ -119,25 +119,29 @@ export default function BorrowRequestsPage() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-white text-xl font-bold">Borrow Requests</h1>
-          <p className="text-gray-500 text-sm mt-0.5">
+            <h1 className="text-white text-xl font-bold">Borrow Requests</h1>
+            <p className="text-gray-500 text-sm mt-0.5">
             Review and approve borrower requests
-          </p>
+            </p>
         </div>
-        <a
-          href="/request"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 hover:text-white text-xs font-medium rounded-xl transition-all"
-        >
-          <FaExternalLinkAlt size={10} />
-          Borrower Form
+
+        <a href="/request"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto flex items-center gap-2 px-4 py-2 
+                    bg-blue-600 hover:bg-blue-500 
+                    border border-blue-500/20
+                    text-white text-xs font-bold 
+                    rounded-xl shadow-lg shadow-blue-600/20
+                    transition-all">
+            <FaExternalLinkAlt size={10} />
+            Borrower Form
         </a>
-      </div>
+        </div>
 
       {/* Filter tabs */}
       <div className="flex items-center gap-1 p-1 bg-gray-900 border border-white/5 rounded-xl w-fit">
-        {(["PENDING", "APPROVED", "REJECTED", "ALL"] as const).map((s) => (
+        {(["ALL", "APPROVED", "REJECTED", "PENDING"] as const).map((s) => (
           <button
             key={s}
             onClick={() => setStatusFilter(s)}
