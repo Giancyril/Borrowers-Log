@@ -129,7 +129,7 @@ export default function BorrowRequestsPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="ml-auto flex items-center gap-2 px-4 py-2 
-                    bg-blue-600 
+                    bg-blue-600 hover:bg-blue-600 
                     border border-blue-500/20
                     text-white text-xs font-bold 
                     rounded-xl shadow-lg shadow-blue-600/20
