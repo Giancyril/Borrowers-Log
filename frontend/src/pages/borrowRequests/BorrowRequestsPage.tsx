@@ -129,7 +129,7 @@ export default function BorrowRequestsPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="ml-auto flex items-center gap-2 px-4 py-2 
-                    bg-blue-600 hover:bg-blue-500 
+                    bg-blue-600 
                     border border-blue-500/20
                     text-white text-xs font-bold 
                     rounded-xl shadow-lg shadow-blue-600/20
@@ -140,23 +140,23 @@ export default function BorrowRequestsPage() {
         </div>
 
       {/* Filter tabs */}
-      <div className="flex justify-center">
-        <div className="flex items-center gap-1 p-1 bg-gray-900 border border-white/5 rounded-xl w-fit">
-        {(["ALL", "APPROVED", "REJECTED", "PENDING"] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              statusFilter === s
-                ? "bg-gray-800 text-white shadow"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
-          </button>
-        ))}
-      </div>
-     </div>
+<div className="w-full"> {/* Parent container to control width */}
+  <div className="flex items-center gap-1 p-1 bg-[#0f172a] border border-white/10 rounded-2xl w-full max-w-md mx-auto">
+    {(["ALL", "APPROVED", "REJECTED", "PENDING"] as const).map((s) => (
+      <button
+        key={s}
+        onClick={() => setStatusFilter(s)}
+        className={`flex-1 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+          statusFilter === s
+            ? "bg-blue-600 text-white" 
+            : "text-gray-400 hover:text-gray-200"
+        }`}
+      >
+        {s === "ALL" ? "All" : s.charAt(0) + s.slice(1).toLowerCase()}
+      </button>
+    ))}
+  </div>
+</div>
 
       {/* List */}
       {isLoading ? (
