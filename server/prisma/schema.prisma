@@ -39,12 +39,18 @@ enum ActivityAction {
   CHANGED_USERNAME
 }
 
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model ActivityLog {
   id         String         @id @default(uuid())
   action     ActivityAction
-  entityType String         // "BorrowRecord" | "Item" | "User"
+  entityType String
   entityId   String?
-  entityName String?        // human-readable label e.g. borrower name
+  entityName String?
   details    String         @default("")
   adminId    String?
   adminName  String?
@@ -80,7 +86,8 @@ model Item {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  borrowRecords BorrowRecord[]
+  borrowRecords  BorrowRecord[]
+  borrowRequests BorrowRequest[] // ✅ fixed naming
 
   @@map("items")
 }
@@ -89,15 +96,15 @@ model BorrowRecord {
   id String @id @default(uuid())
 
   // Item
-  itemId            String
-  item              Item   @relation(fields: [itemId], references: [id])
-  quantityBorrowed  Int
+  itemId           String
+  item             Item   @relation(fields: [itemId], references: [id])
+  quantityBorrowed Int
 
-  // Borrower info (entered by admin)
+  // Borrower info
   borrowerName       String
-  borrowerEmail      String  @default("")
-  borrowerDepartment String  @default("")
-  purpose            String  @default("")
+  borrowerEmail      String @default("")
+  borrowerDepartment String @default("")
+  purpose            String @default("")
 
   // Dates
   borrowDate       DateTime
@@ -112,13 +119,16 @@ model BorrowRecord {
   conditionOnReturn String @default("")
   damageNotes       String @default("")
 
-  // E-signatures (base64 PNG)
+  // E-signatures
   borrowSignature String @default("")
   returnSignature String @default("")
 
-  // Admin who created/processed
+  // Admin
   processedById String?
   processedBy   User?   @relation("ProcessedBy", fields: [processedById], references: [id])
+
+  // 🔗 Linked request (1-to-1)
+  request BorrowRequest?
 
   // Soft delete
   isDeleted Boolean   @default(false)
@@ -128,4 +138,44 @@ model BorrowRecord {
   updatedAt DateTime @updatedAt
 
   @@map("borrowRecords")
+}
+
+model BorrowRequest {
+  id                 String @id @default(uuid())
+  borrowerName       String
+  borrowerEmail      String @default("")
+  borrowerDepartment String @default("")
+  purpose            String @default("")
+  notes              String @default("")
+
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  quantityRequested Int
+  requestedDate     DateTime @default(now())
+  neededUntil       DateTime
+
+  status          RequestStatus @default(PENDING)
+  rejectionReason String        @default("")
+
+  // ✅ FIXED: must be unique for 1-to-1
+  borrowRecordId String?       @unique
+  borrowRecord   BorrowRecord? @relation(fields: [borrowRecordId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([itemId])
+  @@map("borrow_requests")
+}
+
+model ReminderSettings {
+  id                 String  @id @default("singleton") // ✅ only one row
+  emailEnabled       Boolean @default(true)
+  smsEnabled         Boolean @default(false)
+  daysBefore         Int     @default(3)
+  emailFromName      String  @default("NBSC SAS")
+  emailSubjectPrefix String  @default("[Reminder]")
+
+  @@map("reminder_settings")
 }

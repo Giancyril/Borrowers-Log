@@ -7,14 +7,14 @@ const createItem = (data: CreateItemInput) =>
   prisma.item.create({ data });
 
 const getItems = async (query: Record<string, any>) => {
-  const page     = Number(query.page)  || 1;
-  const limit    = Number(query.limit) || 10;
-  const skip     = (page - 1) * limit;
-  const search   = query.search   as string | undefined;
+  const page = Number(query.page) || 1;
+  const limit = Number(query.limit) || 10;
+  const skip = (page - 1) * limit;
+  const search = query.search as string | undefined;
   const category = query.category as string | undefined;
 
   const where: any = { isDeleted: false };
-  if (search)   where.OR = [{ name: { contains: search, mode: "insensitive" } }, { description: { contains: search, mode: "insensitive" } }];
+  if (search) where.OR = [{ name: { contains: search, mode: "insensitive" } }, { description: { contains: search, mode: "insensitive" } }];
   if (category) where.category = category;
 
   const [items, total] = await Promise.all([
@@ -29,8 +29,8 @@ const getItems = async (query: Record<string, any>) => {
         where: { itemId: item.id, status: { in: ["ACTIVE", "OVERDUE"] }, isDeleted: false },
         _sum: { quantityBorrowed: true },
       });
-      const borrowed           = agg._sum.quantityBorrowed ?? 0;
-      const availableQuantity  = Math.max(0, item.totalQuantity - borrowed);
+      const borrowed = agg._sum.quantityBorrowed ?? 0;
+      const availableQuantity = Math.max(0, item.totalQuantity - borrowed);
       return { ...item, availableQuantity };
     })
   );
@@ -46,7 +46,7 @@ const getSingleItem = async (id: string) => {
     where: { itemId: id, status: { in: ["ACTIVE", "OVERDUE"] }, isDeleted: false },
     _sum: { quantityBorrowed: true },
   });
-  const borrowed          = agg._sum.quantityBorrowed ?? 0;
+  const borrowed = agg._sum.quantityBorrowed ?? 0;
   const availableQuantity = Math.max(0, item.totalQuantity - borrowed);
   return { ...item, availableQuantity };
 };
