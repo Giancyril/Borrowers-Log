@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authController }          from "../modules/auth/auth.controller";
 import { itemsController }         from "../modules/items/items.controller";
 import { borrowRecordsController } from "../modules/borrowRecords/borrowRecords.controller";
+import { borrowRequestsController } from "../modules/borrowRequests/borrowRequests.controller";
 import auth                        from "../middlewares/auth";
 import { activityLogController } from "../modules/activityLog/activityLog.controller";
 const router = Router();
@@ -31,6 +32,8 @@ router.delete("/items/:id", auth(), itemsController.deleteItem);
 router.get("/borrow-records/stats",   auth(), borrowRecordsController.getStats);
 router.get("/borrow-records/overdue", auth(), borrowRecordsController.getOverdue);
 
+
+
 // Bulk actions
 router.put   ("/borrow-records/bulk-return", auth(), borrowRecordsController.bulkReturn);
 router.delete("/borrow-records/bulk-delete", auth(), borrowRecordsController.bulkDelete);
@@ -46,5 +49,23 @@ router.delete("/borrow-records/:id",      auth(), borrowRecordsController.delete
 
 router.get("/activity-logs", auth(), activityLogController.getLogs);
 router.delete("/activity-logs", auth, activityLogController.clearAll);
+
+// ── Borrow Requests ─────────────────────────────────────────
+router.get("/borrow-requests", auth(), borrowRequestsController.getRequests);
+
+// PUBLIC (no login)
+router.post("/borrow-requests", borrowRequestsController.createRequest);
+
+router.put(
+  "/borrow-requests/:id/approve",
+  auth(),
+  borrowRequestsController.approveRequest
+);
+
+router.put(
+  "/borrow-requests/:id/reject",
+  auth(),
+  borrowRequestsController.rejectRequest
+);
 
 export default router;

@@ -36,3 +36,11 @@ export const rejectRequest = async (req: Request, res: Response) => {
     res.status(500).json({ success: false });
   }
 };
+
+// ✅ ADD THIS
+export const borrowRequestsController = {
+  getRequests,
+  createRequest,
+  approveRequest,
+  rejectRequest,
+};
