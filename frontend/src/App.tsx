@@ -20,23 +20,23 @@ export default function App() {
         autoClose={3000}
         theme="dark"
         toastStyle={{
-          background:   "#111827",
-          border:       "1px solid rgba(255,255,255,0.08)",
+          background: "#111827",
+          border: "1px solid rgba(255,255,255,0.08)",
           borderRadius: "12px",
-          color:        "#f9fafb",
-          fontSize:     "14px",
-          padding:      "14px 18px",
-          minHeight:    "unset",
+          color: "#f9fafb",
+          fontSize: "14px",
+          padding: "14px 18px",
+          minHeight: "unset",
         }}
         style={isMobile ? {
-          top:       "30px",
-          left:      "50%",
+          top: "30px",
+          left: "50%",
           transform: "translateX(-50%)",
-          width:     "auto",
-          minWidth:  "320px",
-          maxWidth:  "calc(100vw - 32px)",
+          width: "auto",
+          minWidth: "320px",
+          maxWidth: "calc(100vw - 32px)",
         } : {
-          top:   "16px",
+          top: "16px",
           right: "16px",
         }}
       />

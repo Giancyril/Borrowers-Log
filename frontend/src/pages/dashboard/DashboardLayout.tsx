@@ -2,30 +2,34 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
-  FaBars, FaTimes, FaSignOutAlt, FaChevronLeft, FaChevronRight,
-  FaChevronDown, FaCog, FaChartBar, FaHistory,
+  FaBars, FaTimes, FaSignOutAlt, FaChevronDown, FaCog, FaChartBar,
+  FaHistory, FaInbox,
 } from "react-icons/fa";
 import { signOut, useAdminUser } from "../../auth/auth";
-import { useGetDashboardStatsQuery } from "../../redux/api/api";
+import { useGetDashboardStatsQuery, useGetBorrowRequestsQuery } from "../../redux/api/api";
 import OnboardingTour from "../../components/ui/OnboardingTour";
 
 const menu = [
-  { label: "Overview", icon: FaTachometerAlt, path: "/dashboard", exact: true },
-  { label: "Inventory", icon: FaBoxOpen, path: "/items" },
-  { label: "Borrow Records", icon: FaClipboardList, path: "/borrow-records" },
-  { label: "Overdue", icon: FaExclamationTriangle, path: "/overdue" },
-  { label: "Analytics", icon: FaChartBar, path: "/analytics" },
-  { label: "Activity Logs", icon: FaHistory, path: "/activity-logs" },
+  { label: "Overview",       icon: FaTachometerAlt,       path: "/dashboard",       exact: true },
+  { label: "Inventory",      icon: FaBoxOpen,             path: "/items" },
+  { label: "Borrow Records", icon: FaClipboardList,       path: "/borrow-records" },
+  { label: "Requests",       icon: FaInbox,               path: "/borrow-requests" },
+  { label: "Overdue",        icon: FaExclamationTriangle, path: "/overdue" },
+  { label: "Reminders",      icon: FaChartBar,            path: "/reminders" },  // reuse icon or swap
+  { label: "Analytics",      icon: FaChartBar,            path: "/analytics" },
+  { label: "Activity Logs",  icon: FaHistory,             path: "/activity-logs" },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const user = useAdminUser();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location    = useLocation();
+  const navigate    = useNavigate();
+  const user        = useAdminUser();
+  const [sidebarOpen,      setSidebarOpen]      = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const { data: stats } = useGetDashboardStatsQuery(undefined);
+  const [profileOpen,      setProfileOpen]      = useState(false);
+
+  const { data: stats }    = useGetDashboardStatsQuery(undefined);
+  const { data: reqData }  = useGetBorrowRequestsQuery({ status: "PENDING" });
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
@@ -48,14 +52,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     user?.name?.charAt(0)?.toUpperCase() ||
     user?.username?.charAt(0)?.toUpperCase() || "A";
 
-  const overdueCount = stats?.data?.overdueRecords ?? 0;
+  const overdueCount  = stats?.data?.overdueRecords ?? 0;
+  const pendingCount  = (reqData?.data ?? []).length;
+
+  // Badge counts per path
+  const badgeCount = (path: string): number => {
+    if (path === "/overdue")         return overdueCount;
+    if (path === "/borrow-requests") return pendingCount;
+    return 0;
+  };
 
   return (
     <div className="min-h-screen bg-gray-950 lg:flex">
-
       <OnboardingTour />
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)} />
@@ -84,51 +94,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   if (fb) fb.style.display = "flex";
                 }}
               />
-              <span
-                className="text-blue-400 text-xs font-black select-none w-full h-full items-center justify-center"
-                style={{ display: "none" }}
-              >N</span>
+              <span className="text-blue-400 text-xs font-black select-none w-full h-full items-center justify-center"
+                style={{ display: "none" }}>N</span>
             </div>
-            <div className="min-w-0">
-              <p className="text-white text-sm font-bold tracking-widest leading-none">NBSC SAS</p>
-              <p className="text-gray-500 text-[9px] uppercase tracking-widest mt-0.5">Borrowers Log</p>
-            </div>
+            {!sidebarCollapsed && (
+              <div className="min-w-0">
+                <p className="text-white text-sm font-bold tracking-widest leading-none">NBSC SAS</p>
+                <p className="text-gray-500 text-[9px] uppercase tracking-widest mt-0.5">Borrowers Log</p>
+              </div>
+            )}
           </div>
-          
-          {/* Mobile Close Button */}
           <button onClick={() => setSidebarOpen(false)}
             className="lg:hidden w-8 h-8 flex items-center justify-center text-gray-500 hover:text-white transition-colors">
             <FaTimes size={16} />
           </button>
         </div>
 
-
-
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-
           {menu.map(({ label, icon: Icon, path, exact }) => {
-            const active = isActive(path, exact);
+            const active  = isActive(path, exact);
+            const count   = badgeCount(path);
             return (
               <Link key={path} to={path} onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? label : undefined}
                 className={`relative flex items-center gap-3 px-2.5 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 group
                   ${active ? "bg-cyan-500/10 text-cyan-400" : "text-gray-400 hover:text-white hover:bg-white/5"}
                   ${sidebarCollapsed ? "justify-center" : ""}`}>
-                {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-cyan-400 rounded-full" />}
+                {active && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-cyan-400 rounded-full" />
+                )}
                 <span className="relative shrink-0">
                   <Icon size={14} className={active ? "text-cyan-400" : "text-gray-500 group-hover:text-gray-300"} />
-                  {path === "/overdue" && overdueCount > 0 && (
+                  {count > 0 && (
                     <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center">
-                      {overdueCount > 9 ? "9+" : overdueCount}
+                      {count > 9 ? "9+" : count}
                     </span>
                   )}
                 </span>
                 {!sidebarCollapsed && <span>{label}</span>}
-                {!sidebarCollapsed && path === "/overdue" && overdueCount > 0 && (
+                {!sidebarCollapsed && count > 0 && (
                   <span className="ml-auto px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[10px] font-bold rounded-full border border-red-500/30">
-                    {overdueCount}
+                    {count}
                   </span>
                 )}
                 {sidebarCollapsed && (
@@ -140,7 +148,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             );
           })}
         </nav>
-
       </aside>
 
       {/* ── Main content ── */}
@@ -149,43 +156,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* Topbar */}
         <header className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-white/5 px-4 lg:px-6 h-14 flex items-center gap-3">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="lg:hidden w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0"
-          >
+          <button onClick={() => setSidebarOpen(true)}
+            className="lg:hidden w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
             <FaBars size={13} />
           </button>
-
-          {/* Logo in topbar — mobile only */}
-          <div className="flex lg:hidden items-center gap-2.5 flex-1">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-
-              <span
-                className="text-blue-400 text-[9px] font-black w-full h-full items-center justify-center"
-                style={{ display: "none" }}
-              >N</span>
-            </div>
-
-          </div>
-
+          <div className="flex lg:hidden items-center gap-2.5 flex-1" />
           <div className="hidden lg:flex flex-1" />
 
           {/* Profile */}
           <div id="profile-dropdown-anchor" className="relative pl-3 border-l border-l-blue-500/30">
-            <button
-              onClick={() => setProfileOpen((p) => !p)}
-              className="flex items-center gap-2 focus:outline-none"
-            >
+            <button onClick={() => setProfileOpen((p) => !p)} className="flex items-center gap-2 focus:outline-none">
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
                 <span className="text-white text-[10px] font-black">{initial}</span>
               </div>
               <span className="hidden sm:block text-white text-xs font-semibold max-w-[120px] truncate">
                 {user?.username || user?.name || "Admin"}
               </span>
-              <FaChevronDown
-                size={9}
-                className={`hidden sm:block text-gray-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`}
-              />
+              <FaChevronDown size={9}
+                className={`hidden sm:block text-gray-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
             </button>
 
             {profileOpen && (
@@ -196,15 +184,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </div>
                 <div className="py-1">
                   <Link to="/settings" onClick={() => setProfileOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-xs"
-                  >
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-xs">
                     <FaCog size={11} className="text-gray-400 shrink-0" />
                     Settings
                   </Link>
                   <div className="mx-3 my-1 border-t border-white/5" />
                   <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs"
-                  >
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs">
                     <FaSignOutAlt size={11} className="text-red-400 shrink-0" />
                     Sign Out
                   </button>
@@ -214,7 +200,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Page content */}
         <main id="main-content" className="flex-1 p-4 sm:p-5 lg:p-7 overflow-auto bg-gray-950">
           {children}
         </main>

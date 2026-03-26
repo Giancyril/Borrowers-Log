@@ -83,6 +83,15 @@ const api = baseApi.injectEndpoints({
       query: (body) => ({ url: "/borrow-records", method: "POST", body }),
       invalidatesTags: ["borrowRecords", "items", "stats"],
     }),
+    // Bulk borrow: creates multiple records in one transaction
+    createBulkBorrowRecords: build.mutation({
+      query: (body: { records: object[] }) => ({
+        url: "/borrow-records/bulk",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["borrowRecords", "items", "stats"],
+    }),
     updateBorrowRecord: build.mutation({
       query: ({ id, ...body }) => ({ url: `/borrow-records/${id}`, method: "PUT", body }),
       invalidatesTags: ["borrowRecords", "stats"],
@@ -104,6 +113,52 @@ const api = baseApi.injectEndpoints({
       invalidatesTags: ["borrowRecords", "stats"],
     }),
 
+    // ── Borrow Requests ───────────────────────────────────────────────────
+    // Borrowers submit requests; admin approves before it becomes a record
+    getBorrowRequests: build.query({
+      query: (params) => ({ url: "/borrow-requests", params }),
+      providesTags: ["borrowRequests"],
+    }),
+    createBorrowRequest: build.mutation({
+      query: (body) => ({ url: "/borrow-requests", method: "POST", body }),
+      invalidatesTags: ["borrowRequests"],
+    }),
+    approveBorrowRequest: build.mutation({
+      query: ({ id, ...body }) => ({
+        url: `/borrow-requests/${id}/approve`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["borrowRequests", "borrowRecords", "items", "stats"],
+    }),
+    rejectBorrowRequest: build.mutation({
+      query: ({ id, reason }: { id: string; reason?: string }) => ({
+        url: `/borrow-requests/${id}/reject`,
+        method: "PUT",
+        body: { reason },
+      }),
+      invalidatesTags: ["borrowRequests"],
+    }),
+
+    // ── Reminders ─────────────────────────────────────────────────────────
+    // Manually trigger due-date reminders for active/overdue records
+    sendReminders: build.mutation({
+      query: (body: { type: "upcoming" | "overdue" | "specific"; recordIds?: string[] }) => ({
+        url: "/reminders/send",
+        method: "POST",
+        body,
+      }),
+    }),
+    getReminderSettings: build.query({
+      query: () => "/reminders/settings",
+      providesTags: ["reminderSettings"],
+    }),
+    updateReminderSettings: build.mutation({
+      query: (body) => ({ url: "/reminders/settings", method: "PUT", body }),
+      invalidatesTags: ["reminderSettings"],
+    }),
+
+    // ── Activity Logs ─────────────────────────────────────────────────────
     getActivityLogs: build.query({
       query: (params) => ({ url: "/activity-logs", params }),
       providesTags: ["activityLogs"],
@@ -136,11 +191,19 @@ export const {
   useGetBorrowerHistoryQuery,
   useGetBorrowersQuery,
   useCreateBorrowRecordMutation,
+  useCreateBulkBorrowRecordsMutation,
   useUpdateBorrowRecordMutation,
   useReturnBorrowRecordMutation,
   useDeleteBorrowRecordMutation,
   useBulkReturnRecordsMutation,
   useBulkDeleteRecordsMutation,
+  useGetBorrowRequestsQuery,
+  useCreateBorrowRequestMutation,
+  useApproveBorrowRequestMutation,
+  useRejectBorrowRequestMutation,
+  useSendRemindersMutation,
+  useGetReminderSettingsQuery,
+  useUpdateReminderSettingsMutation,
   useGetActivityLogsQuery,
   useClearActivityLogsMutation,
 } = api;

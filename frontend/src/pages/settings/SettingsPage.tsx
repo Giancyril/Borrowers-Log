@@ -47,27 +47,27 @@ const SubmitButton = ({ loading, children }: { loading?: boolean; children: Reac
 );
 
 export default function SettingsPage() {
-  const navigate    = useNavigate();
+  const navigate = useNavigate();
   const currentUser = useAdminUser();
   const [activeTab, setActiveTab] = useState<Tab>("account");
-  const [showPw,    setShowPw]    = useState(false);
+  const [showPw, setShowPw] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [showRegPw, setShowRegPw] = useState(false);
 
   const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
-  const [changePassword, { isLoading: pwLoading }]       = useChangePasswordMutation();
-  const [changeEmail,    { isLoading: emailLoading }]    = useChangeEmailMutation();
+  const [changePassword, { isLoading: pwLoading }] = useChangePasswordMutation();
+  const [changeEmail, { isLoading: emailLoading }] = useChangeEmailMutation();
   const [changeUsername, { isLoading: usernameLoading }] = useChangeUsernameMutation();
-  const [registerAdmin,  { isLoading: regLoading }]      = useRegisterAdminMutation();
-  const [deleteAdmin,    { isLoading: delLoading }]      = useDeleteAdminMutation();
-  const { data: adminsData, isLoading: adminsLoading }   = useGetAdminsQuery(undefined);
+  const [registerAdmin, { isLoading: regLoading }] = useRegisterAdminMutation();
+  const [deleteAdmin, { isLoading: delLoading }] = useDeleteAdminMutation();
+  const { data: adminsData, isLoading: adminsLoading } = useGetAdminsQuery(undefined);
   const admins = adminsData?.data ?? [];
 
-  const pwForm       = useForm();
-  const emailForm    = useForm();
+  const pwForm = useForm();
+  const emailForm = useForm();
   const usernameForm = useForm();
-  const regForm      = useForm();
+  const regForm = useForm();
 
   const handleChangePassword = async (data: any) => {
     try {
@@ -108,10 +108,10 @@ export default function SettingsPage() {
 
   const handleDeleteAdmin = async (id: string, name: string) => {
     const ok = await confirm({
-      title:       "Delete Admin",
-      message:     `Delete admin "${name}"? This cannot be undone.`,
+      title: "Delete Admin",
+      message: `Delete admin "${name}"? This cannot be undone.`,
       confirmText: "Delete",
-      variant:     "danger",
+      variant: "danger",
     });
     if (!ok) return;
     try {
@@ -121,9 +121,9 @@ export default function SettingsPage() {
   };
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
-    { key: "account",  label: "Account",  icon: <FaUser size={13} />      },
+    { key: "account", label: "Account", icon: <FaUser size={13} /> },
     { key: "security", label: "Security", icon: <FaShieldAlt size={13} /> },
-    { key: "admins",   label: "Admins",   icon: <FaUserPlus size={13} />  },
+    { key: "admins", label: "Admins", icon: <FaUserPlus size={13} /> },
   ];
 
   return (
@@ -152,9 +152,8 @@ export default function SettingsPage() {
       <div className="flex gap-1 bg-gray-900 border border-white/5 rounded-xl p-1">
         {tabs.map(({ key, label, icon }) => (
           <button key={key} onClick={() => setActiveTab(key)}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === key ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:text-white"
-            }`}>
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${activeTab === key ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:text-white"
+              }`}>
             {icon}
             <span className="hidden sm:inline">{label}</span>
           </button>

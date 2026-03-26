@@ -13,6 +13,14 @@ export const baseApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["items", "borrowRecords", "stats", "admins", "activityLogs"],
+  tagTypes: [
+    "items",
+    "borrowRecords",
+    "stats",
+    "admins",
+    "activityLogs",
+    "borrowRequests",
+    "reminderSettings",
+  ],
   endpoints: () => ({}),
 });
