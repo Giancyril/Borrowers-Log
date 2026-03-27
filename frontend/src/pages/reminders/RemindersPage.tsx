@@ -74,7 +74,7 @@ export default function RemindersPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-white text-xl font-bold">Due Date Reminders</h1>
-        <p className="text-gray-500 text-sm mt-0.5">
+        <p className="text-gray-500 text-xs mt-0.5">
           Send email or SMS notifications to borrowers before items are due
         </p>
       </div>
@@ -223,7 +223,7 @@ export default function RemindersPage() {
 
           <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3">
             <p className="text-amber-300/80 text-xs leading-relaxed">
-              ℹ️ Automated daily reminders require a scheduled job (cron) configured
+               Automated daily reminders require a scheduled job (cron) configured
               on the backend. The buttons above send reminders manually at any time.
             </p>
           </div>
