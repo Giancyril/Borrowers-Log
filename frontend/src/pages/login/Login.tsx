@@ -112,7 +112,8 @@ export default function Login() {
                 className="w-16 h-16 object-contain"
                 onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
-              <p className="text-white font-bold text-sm tracking-wide">NBSC SAS Borrowers Log</p>
+              <p className="text-white font-bold text-sm tracking-wide">NBSC SAS</p>
+              <p className="text-gray-500 text-[11px] tracking-widest uppercase mt-0.5">Borrowers Log</p>
             </div>
             <p className="text-gray-500 text-sm mt-1">Enter your credentials to continue</p>
           </div>
