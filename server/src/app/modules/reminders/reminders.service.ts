@@ -1,5 +1,6 @@
 import prisma from "../../config/prisma";
 
+// ✅ named exports
 export const getSettings = async () => {
   let settings = await prisma.reminderSettings.findFirst();
 
@@ -23,11 +24,27 @@ export const updateSettings = async (data: any) => {
   return prisma.reminderSettings.create({ data });
 };
 
-export const sendReminders = async () => {
+export const sendReminders = async (type: "upcoming" | "overdue") => {
+  let whereCondition: any = {};
+
+  if (type === "upcoming") {
+    whereCondition = {
+      status: "ACTIVE",
+      dueDate: {
+        lte: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      },
+    };
+  }
+
+  if (type === "overdue") {
+    whereCondition = {
+      status: "OVERDUE",
+    };
+  }
+
   const records = await prisma.borrowRecord.findMany({
-    where: { status: "ACTIVE" },
+    where: whereCondition,
   });
 
-  // Stub logic
-  return { count: records.length };
+  return { count: records.length, type };
 };

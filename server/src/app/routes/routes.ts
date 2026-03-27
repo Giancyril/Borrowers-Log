@@ -5,6 +5,7 @@ import { borrowRecordsController } from "../modules/borrowRecords/borrowRecords.
 import { borrowRequestsController } from "../modules/borrowRequests/borrowRequests.controller";
 import auth                        from "../middlewares/auth";
 import { activityLogController } from "../modules/activityLog/activityLog.controller";
+import { remindersController } from "../modules/reminders/reminders.controller";
 const router = Router();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -32,7 +33,10 @@ router.delete("/items/:id", auth(), itemsController.deleteItem);
 router.get("/borrow-records/stats",   auth(), borrowRecordsController.getStats);
 router.get("/borrow-records/overdue", auth(), borrowRecordsController.getOverdue);
 
-
+// ── Reminders ─────────────────────────────────────────
+router.post("/reminders/send", auth(), remindersController.sendReminders);
+router.get("/reminders/settings", auth(), remindersController.getSettings);
+router.put("/reminders/settings", auth(), remindersController.updateSettings);
 
 // Bulk actions
 router.put   ("/borrow-records/bulk-return", auth(), borrowRecordsController.bulkReturn);
