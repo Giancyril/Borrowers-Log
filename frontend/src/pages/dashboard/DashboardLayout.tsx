@@ -1,12 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
   FaBars, FaTimes, FaSignOutAlt, FaChevronDown, FaCog, FaChartBar,
-  FaHistory, FaInbox,
+  FaHistory, FaInbox, FaBell, FaPlus, FaShare, FaTrash, FaEdit,
+  FaCheck, FaUndo, FaArchive,
 } from "react-icons/fa";
 import { signOut, useAdminUser } from "../../auth/auth";
-import { useGetDashboardStatsQuery, useGetBorrowRequestsQuery } from "../../redux/api/api";
+import { useGetDashboardStatsQuery, useGetBorrowRequestsQuery, useGetNotificationsQuery } from "../../redux/api/api";
+import type { ActivityLog } from "../../types/types";
 import OnboardingTour from "../../components/ui/OnboardingTour";
 
 const menu = [
@@ -15,21 +17,232 @@ const menu = [
   { label: "Borrow Records", icon: FaClipboardList,       path: "/borrow-records" },
   { label: "Requests",       icon: FaInbox,               path: "/borrow-requests" },
   { label: "Overdue",        icon: FaExclamationTriangle, path: "/overdue" },
-  { label: "Reminders",      icon: FaChartBar,            path: "/reminders" },  // reuse icon or swap
+  { label: "Reminders",      icon: FaChartBar,            path: "/reminders" },
   { label: "Analytics",      icon: FaChartBar,            path: "/analytics" },
   { label: "Activity Logs",  icon: FaHistory,             path: "/activity-logs" },
 ];
 
+// ─── Notification helpers ─────────────────────────────────────────────────────
+const SEEN_KEY    = "nbsc_borrow_notif_seen_id";
+const CLEARED_KEY = "nbsc_borrow_notif_cleared_at";
+
+function getSeenId(): string { return localStorage.getItem(SEEN_KEY) ?? ""; }
+function setSeenId(id: string) { localStorage.setItem(SEEN_KEY, id); }
+
+function notifMeta(action: string): { icon: React.ReactNode; color: string; dot: string } {
+  const a = action.toLowerCase();
+  if (a.includes("create") || a.includes("add") || a.includes("borrow"))
+    return { icon: <FaPlus size={9} />,    color: "text-emerald-400", dot: "bg-emerald-400" };
+  if (a.includes("return"))
+    return { icon: <FaUndo size={9} />,    color: "text-blue-400",    dot: "bg-blue-400" };
+  if (a.includes("approv"))
+    return { icon: <FaCheck size={9} />,   color: "text-cyan-400",    dot: "bg-cyan-400" };
+  if (a.includes("reject") || a.includes("delete"))
+    return { icon: <FaTrash size={9} />,   color: "text-red-400",     dot: "bg-red-400" };
+  if (a.includes("overdue"))
+    return { icon: <FaArchive size={9} />, color: "text-amber-400",   dot: "bg-amber-400" };
+  if (a.includes("remind"))
+    return { icon: <FaBell size={9} />,    color: "text-purple-400",  dot: "bg-purple-400" };
+  return   { icon: <FaEdit size={9} />,    color: "text-gray-400",    dot: "bg-gray-400" };
+}
+
+function fmtRelative(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60)  return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60)  return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+// ─── Notification Bell ────────────────────────────────────────────────────────
+function NotificationBell() {
+  const [open,      setOpen]      = useState(false);
+  const [seenId,    setSeenIdS]   = useState(getSeenId);
+  const [clearedAt, setClearedAt] = useState<string>(() => localStorage.getItem(CLEARED_KEY) ?? "");
+  const dropRef                   = useRef<HTMLDivElement>(null);
+
+  const { data } = useGetNotificationsQuery(undefined, {
+    pollingInterval: 30_000,
+    refetchOnFocus:  true,
+  });
+
+  const allLogs: ActivityLog[] = (data as any)?.data ?? [];
+
+  // Hide logs cleared by "Clear all"
+  const logs = clearedAt
+    ? allLogs.filter(l => new Date(l.createdAt) > new Date(clearedAt))
+    : allLogs;
+
+  const latest = logs[0];
+
+  const unreadCount = seenId
+    ? logs.filter(l => l.id > seenId).length
+    : logs.length;
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!dropRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const handleOpen = useCallback(() => setOpen(o => !o), []);
+
+  const handleMarkAllRead = useCallback(() => {
+    if (!latest?.id) return;
+    setSeenId(latest.id);
+    setSeenIdS(latest.id);
+  }, [latest]);
+
+  const handleClearAll = useCallback(() => {
+    const now = new Date().toISOString();
+    localStorage.setItem(CLEARED_KEY, now);
+    setClearedAt(now);
+    if (latest?.id) { setSeenId(latest.id); setSeenIdS(latest.id); }
+  }, [latest]);
+
+  return (
+    <div ref={dropRef} className="relative">
+      {/* Bell button */}
+      <button
+        onClick={handleOpen}
+        className="relative w-8 h-8 rounded-xl bg-gray-800 hover:bg-gray-700 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-all"
+        title="Notifications"
+      >
+        <FaBell size={13} />
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-lg shadow-red-500/40 animate-pulse">
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-11 sm:w-80 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden z-50">
+
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-white/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FaBell size={11} className="text-cyan-400" />
+                <p className="text-white text-xs font-bold">Notifications</p>
+                {unreadCount === 0 && logs.length > 0 && (
+                  <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">All read</span>
+                )}
+              </div>
+              {logs.length > 0 && (
+                <span className="text-[10px] text-gray-600">{logs.length} recent</span>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            {logs.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleMarkAllRead}
+                  disabled={unreadCount === 0}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 text-[10px] font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <FaCheck size={8} /> Mark all read
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-[10px] font-semibold transition-all"
+                >
+                  <FaTimes size={8} /> Clear all
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* List */}
+          <div className="max-h-[360px] overflow-y-auto divide-y divide-white/[0.04]">
+            {logs.length === 0 ? (
+              <div className="py-10 text-center">
+                <FaBell size={24} className="text-gray-700 mx-auto mb-2" />
+                <p className="text-gray-500 text-xs">No notifications</p>
+              </div>
+            ) : (
+              logs.map((log, i) => {
+                const { icon, color, dot } = notifMeta(log.action);
+                const isUnread = seenId ? log.id > seenId : i === 0;
+                return (
+                  <div
+                    key={log.id}
+                    className={`flex items-start gap-3 px-4 py-3 transition-colors hover:bg-white/[0.02] ${
+                      isUnread ? "bg-cyan-500/[0.04]" : ""
+                    }`}
+                  >
+                    {/* Icon bubble */}
+                    <div className={`w-7 h-7 rounded-full bg-gray-800 border border-white/5 flex items-center justify-center shrink-0 mt-0.5 ${color}`}>
+                      {icon}
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-semibold leading-tight truncate">
+                        {log.entityName ?? log.action}
+                      </p>
+                      <p className="text-gray-500 text-[10px] mt-0.5 leading-snug line-clamp-2">
+                        {log.details || log.action}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {log.adminName && (
+                          <span className="text-gray-600 text-[10px]">{log.adminName}</span>
+                        )}
+                        <span className="text-gray-700 text-[10px]">·</span>
+                        <span className="text-gray-600 text-[10px]">{fmtRelative(log.createdAt)}</span>
+                      </div>
+                    </div>
+
+                    {/* Unread dot */}
+                    {isUnread && (
+                      <div className={`w-1.5 h-1.5 rounded-full ${dot} shrink-0 mt-2`} />
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer */}
+          {allLogs.length > 0 && (
+            <div className="py-2.5 border-t border-white/5 bg-gray-900/60 flex justify-center">
+              <Link
+                to="/activity-logs"
+                onClick={() => setOpen(false)}
+                className="text-cyan-400 hover:text-cyan-300 text-[11px] font-semibold transition-colors"
+              >
+                View all activity logs →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Layout ───────────────────────────────────────────────────────────────────
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location    = useLocation();
   const navigate    = useNavigate();
   const user        = useAdminUser();
+
   const [sidebarOpen,      setSidebarOpen]      = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [profileOpen,      setProfileOpen]      = useState(false);
 
-  const { data: stats }    = useGetDashboardStatsQuery(undefined);
-  const { data: reqData }  = useGetBorrowRequestsQuery({ status: "PENDING" });
+  const { data: stats }   = useGetDashboardStatsQuery(undefined);
+  const { data: reqData } = useGetBorrowRequestsQuery({ status: "PENDING" });
 
   useEffect(() => { setSidebarOpen(false); }, [location.pathname]);
 
@@ -52,10 +265,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     user?.name?.charAt(0)?.toUpperCase() ||
     user?.username?.charAt(0)?.toUpperCase() || "A";
 
-  const overdueCount  = stats?.data?.overdueRecords ?? 0;
-  const pendingCount  = (reqData?.data ?? []).length;
+  const overdueCount = stats?.data?.overdueRecords ?? 0;
+  const pendingCount = (reqData?.data ?? []).length;
 
-  // Badge counts per path
   const badgeCount = (path: string): number => {
     if (path === "/overdue")         return overdueCount;
     if (path === "/borrow-requests") return pendingCount;
@@ -114,8 +326,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {menu.map(({ label, icon: Icon, path, exact }) => {
-            const active  = isActive(path, exact);
-            const count   = badgeCount(path);
+            const active = isActive(path, exact);
+            const count  = badgeCount(path);
             return (
               <Link key={path} to={path} onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? label : undefined}
@@ -160,43 +372,54 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             className="lg:hidden w-8 h-8 rounded-lg bg-gray-800 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0">
             <FaBars size={13} />
           </button>
+
           <div className="flex lg:hidden items-center gap-2.5 flex-1" />
           <div className="hidden lg:flex flex-1" />
 
-          {/* Profile */}
-          <div id="profile-dropdown-anchor" className="relative pl-3 border-l border-l-blue-500/30">
-            <button onClick={() => setProfileOpen((p) => !p)} className="flex items-center gap-2 focus:outline-none">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
-                <span className="text-white text-[10px] font-black">{initial}</span>
-              </div>
-              <span className="hidden sm:block text-white text-xs font-semibold max-w-[120px] truncate">
-                {user?.username || user?.name || "Admin"}
-              </span>
-              <FaChevronDown size={9}
-                className={`hidden sm:block text-gray-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
-            </button>
+          {/* ── Right side: bell + profile ── */}
+          <div className="flex items-center gap-2">
 
-            {profileOpen && (
-              <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
-                <div className="px-4 py-3 border-b border-white/5">
-                  <p className="text-white text-xs font-semibold truncate">{user?.username || user?.name || " "}</p>
-                  <p className="text-gray-500 text-[10px] mt-0.5 truncate">{user?.email || ""}</p>
+            {/* Notification bell */}
+            <NotificationBell />
+
+            {/* Divider */}
+            <div className="w-px h-5 bg-white/10" />
+
+            {/* Profile */}
+            <div id="profile-dropdown-anchor" className="relative">
+              <button onClick={() => setProfileOpen(p => !p)} className="flex items-center gap-2 focus:outline-none">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center shrink-0">
+                  <span className="text-white text-[10px] font-black">{initial}</span>
                 </div>
-                <div className="py-1">
-                  <Link to="/settings" onClick={() => setProfileOpen(false)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-xs">
-                    <FaCog size={11} className="text-gray-400 shrink-0" />
-                    Settings
-                  </Link>
-                  <div className="mx-3 my-1 border-t border-white/5" />
-                  <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs">
-                    <FaSignOutAlt size={11} className="text-red-400 shrink-0" />
-                    Sign Out
-                  </button>
+                <span className="hidden sm:block text-white text-xs font-semibold max-w-[120px] truncate">
+                  {user?.username || user?.name || "Admin"}
+                </span>
+                <FaChevronDown size={9}
+                  className={`hidden sm:block text-gray-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {profileOpen && (
+                <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-white/5">
+                    <p className="text-white text-xs font-semibold truncate">{user?.username || user?.name || " "}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5 truncate">{user?.email || ""}</p>
+                  </div>
+                  <div className="py-1">
+                    <Link to="/settings" onClick={() => setProfileOpen(false)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-xs">
+                      <FaCog size={11} className="text-gray-400 shrink-0" />
+                      Settings
+                    </Link>
+                    <div className="mx-3 my-1 border-t border-white/5" />
+                    <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs">
+                      <FaSignOutAlt size={11} className="text-red-400 shrink-0" />
+                      Sign Out
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </header>
 

@@ -83,7 +83,6 @@ const api = baseApi.injectEndpoints({
       query: (body) => ({ url: "/borrow-records", method: "POST", body }),
       invalidatesTags: ["borrowRecords", "items", "stats"],
     }),
-    // Bulk borrow: creates multiple records in one transaction
     createBulkBorrowRecords: build.mutation({
       query: (body: { records: object[] }) => ({
         url: "/borrow-records/bulk",
@@ -114,7 +113,6 @@ const api = baseApi.injectEndpoints({
     }),
 
     // ── Borrow Requests ───────────────────────────────────────────────────
-    // Borrowers submit requests; admin approves before it becomes a record
     getBorrowRequests: build.query({
       query: (params) => ({ url: "/borrow-requests", params }),
       providesTags: ["borrowRequests"],
@@ -141,7 +139,6 @@ const api = baseApi.injectEndpoints({
     }),
 
     // ── Reminders ─────────────────────────────────────────────────────────
-    // Manually trigger due-date reminders for active/overdue records
     sendReminders: build.mutation({
       query: (body: { type: "upcoming" | "overdue" | "specific"; recordIds?: string[] }) => ({
         url: "/reminders/send",
@@ -166,6 +163,12 @@ const api = baseApi.injectEndpoints({
     clearActivityLogs: build.mutation<void, void>({
       query: () => ({ url: "/activity-logs", method: "DELETE" }),
       invalidatesTags: ["activityLogs"],
+    }),
+
+    // ── Notifications (polls activity-logs, last 15, every 30s) ──────────
+    getNotifications: build.query({
+      query: () => ({ url: "/activity-logs", params: { limit: 15, page: 1 } }),
+      providesTags: ["activityLogs"],
     }),
   }),
 });
@@ -206,4 +209,5 @@ export const {
   useUpdateReminderSettingsMutation,
   useGetActivityLogsQuery,
   useClearActivityLogsMutation,
+  useGetNotificationsQuery,
 } = api;
