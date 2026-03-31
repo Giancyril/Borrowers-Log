@@ -20,140 +20,29 @@ const labelCls =
 function EmailPreviewModal({
   type,
   settings,
-  record,
   onClose,
 }: {
   type: "upcoming" | "overdue";
   settings: any;
-  record?: any;
   onClose: () => void;
 }) {
-  const fromName   = settings.emailFromName      || "NBSC SAS";
-  const prefix     = settings.emailSubjectPrefix || "[Reminder]";
+  const fromName = settings.emailFromName      || "NBSC SAS";
+  const prefix   = settings.emailSubjectPrefix || "[Reminder]";
   const isUpcoming = type === "upcoming";
 
-  // Real data with fallbacks
-  const borrowerName = record?.borrowerName          || "Sample Borrower";
-  const borrowerEmail = record?.borrowerEmail        || "borrower@email.com";
-  const itemName     = record?.item?.name            || "Sample Item";
-  const qty          = record?.quantityBorrowed      ?? 1;
-  const dueDate      = record?.dueDate
-    ? new Date(record.dueDate).toLocaleDateString("en-PH", {
-        year: "numeric", month: "long", day: "numeric",
-      })
-    : "—";
-
   const subject = isUpcoming
-    ? `${prefix} Your borrowed item is due on ${dueDate}`
-    : `${prefix} Overdue: Please return "${itemName}" immediately`;
-
-  const accentColor  = isUpcoming ? "#2563eb" : "#dc2626";
-  const accentLight  = isUpcoming ? "#eff6ff" : "#fff5f5";
-  const accentBorder = isUpcoming ? "#bfdbfe" : "#fecaca";
-  const badgeLabel   = isUpcoming ? "UPCOMING DUE DATE" : "OVERDUE NOTICE";
-
-  const emailHtml = `
-    <div style="font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f5;padding:32px 16px;">
-      <div style="max-width:520px;margin:0 auto;">
-
-        <!-- Header -->
-        <div style="background:${accentColor};border-radius:12px 12px 0 0;padding:28px 32px 24px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-            <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">
-              ${isUpcoming ? "📅" : "⚠️"}
-            </div>
-            <div>
-              <div style="color:rgba(255,255,255,0.7);font-size:10px;letter-spacing:2px;font-weight:700;text-transform:uppercase;">${fromName}</div>
-              <div style="color:#fff;font-size:17px;font-weight:700;margin-top:1px;">
-                ${isUpcoming ? "Due Date Reminder" : "Overdue Return Notice"}
-              </div>
-            </div>
-          </div>
-          <div style="display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:3px 12px;">
-            <span style="color:#fff;font-size:10px;font-weight:700;letter-spacing:1.5px;">${badgeLabel}</span>
-          </div>
-        </div>
-
-        <!-- Body card -->
-        <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:28px 32px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-
-          <p style="margin:0 0 6px;font-size:15px;color:#111827;font-weight:600;">
-            Hi <span style="color:${accentColor};">${borrowerName}</span>,
-          </p>
-          <p style="margin:0 0 22px;font-size:13.5px;color:#6b7280;line-height:1.6;">
-            ${isUpcoming
-              ? "This is a friendly reminder that one of your borrowed items is approaching its due date. Please make arrangements to return it on time."
-              : `Your borrowed item has passed its due date and has <strong style="color:#dc2626;">not yet been returned</strong>. Kindly return it as soon as possible to avoid further action.`
-            }
-          </p>
-
-          <!-- Detail card -->
-          <div style="background:${accentLight};border:1px solid ${accentBorder};border-radius:10px;padding:18px 20px;margin-bottom:22px;">
-            <div style="font-size:10px;font-weight:800;color:${accentColor};letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">Borrow Details</div>
-            <table style="width:100%;border-collapse:collapse;">
-              <tr>
-                <td style="padding:7px 0;font-size:12px;color:#9ca3af;font-weight:600;width:38%;vertical-align:top;">ITEM</td>
-                <td style="padding:7px 0;font-size:13px;color:#111827;font-weight:700;">${itemName}</td>
-              </tr>
-              <tr>
-                <td style="padding:7px 0;border-top:1px solid ${accentBorder};font-size:12px;color:#9ca3af;font-weight:600;">QUANTITY</td>
-                <td style="padding:7px 0;border-top:1px solid ${accentBorder};font-size:13px;color:#111827;font-weight:700;">${qty}</td>
-              </tr>
-              <tr>
-                <td style="padding:7px 0;border-top:1px solid ${accentBorder};font-size:12px;color:#9ca3af;font-weight:600;">DUE DATE</td>
-                <td style="padding:7px 0;border-top:1px solid ${accentBorder};font-size:13px;font-weight:800;color:#dc2626;">${dueDate}</td>
-              </tr>
-              ${!isUpcoming ? `
-              <tr>
-                <td style="padding:7px 0;border-top:1px solid ${accentBorder};font-size:12px;color:#9ca3af;font-weight:600;">STATUS</td>
-                <td style="padding:7px 0;border-top:1px solid ${accentBorder};">
-                  <span style="display:inline-block;background:#fee2e2;color:#b91c1c;font-size:10px;font-weight:800;padding:2px 10px;border-radius:999px;letter-spacing:1px;">OVERDUE</span>
-                </td>
-              </tr>` : ""}
-            </table>
-          </div>
-
-          <!-- Notice -->
-          <div style="background:${isUpcoming ? "#f9fafb" : "#fff5f5"};border-left:3px solid ${accentColor};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:24px;">
-            <p style="margin:0;font-size:12.5px;color:${isUpcoming ? "#374151" : "#b91c1c"};line-height:1.6;font-weight:${isUpcoming ? "400" : "600"};">
-              ${isUpcoming
-                ? "Please return the item on or before the due date to avoid overdue penalties."
-                : "Failure to return the item may result in additional penalties or restrictions on future borrowing."
-              }
-            </p>
-          </div>
-
-          <!-- Footer -->
-          <div style="border-top:1px solid #f3f4f6;padding-top:18px;display:flex;align-items:center;justify-content:space-between;">
-            <div>
-              <div style="font-size:12px;font-weight:700;color:#111827;">${fromName}</div>
-              <div style="font-size:11px;color:#9ca3af;margin-top:1px;">Borrowers Log · Automated Notification</div>
-            </div>
-            <div style="width:32px;height:32px;background:${accentLight};border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;">${isUpcoming ? "📅" : "⚠️"}</div>
-          </div>
-
-          <p style="margin:14px 0 0;font-size:10px;color:#d1d5db;text-align:center;">
-            This is an automated message. Please do not reply directly to this email.
-          </p>
-        </div>
-
-      </div>
-    </div>
-  `;
+    ? `${prefix} Your borrowed item is due on March 31, 2026`
+    : `${prefix} Overdue: Please return "Projector" immediately`;
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
-
         {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div>
             <h3 className="text-sm font-bold text-white">Email Preview</h3>
             <p className="text-gray-500 text-xs mt-0.5">
               {isUpcoming ? "Upcoming due date" : "Overdue notice"} template
-              {record && (
-                <span className="text-gray-600"> · showing real record</span>
-              )}
             </p>
           </div>
           <button
@@ -164,30 +53,92 @@ function EmailPreviewModal({
           </button>
         </div>
 
-        <div className="overflow-y-auto">
-          {/* Meta bar */}
-          <div className="px-5 py-3 space-y-1.5 bg-gray-950/50 border-b border-white/5 text-xs">
-            {[
-              ["From",    `${fromName} <your-gmail@gmail.com>`],
-              ["To",      borrowerEmail],
-              ["Subject", subject],
-            ].map(([label, value]) => (
-              <div key={label} className="flex gap-2">
-                <span className="text-gray-600 w-14 shrink-0 font-medium">{label}</span>
-                <span className={`text-gray-300 ${label === "Subject" ? "font-semibold" : ""}`}>
-                  {value}
-                </span>
-              </div>
-            ))}
+        <div className="overflow-y-auto p-5 space-y-4">
+          {/* Meta */}
+          <div className="bg-gray-800 rounded-xl p-4 space-y-2 text-xs">
+            <div className="flex gap-2">
+              <span className="text-gray-500 w-14 shrink-0">From</span>
+              <span className="text-white">{fromName} &lt;your-gmail@gmail.com&gt;</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-gray-500 w-14 shrink-0">To</span>
+              <span className="text-white">borrower@email.com</span>
+            </div>
+            <div className="flex gap-2">
+              <span className="text-gray-500 w-14 shrink-0">Subject</span>
+              <span className="text-white font-semibold">{subject}</span>
+            </div>
           </div>
 
-          {/* Email render */}
-          <div
-            className="rounded-b-2xl overflow-hidden"
-            dangerouslySetInnerHTML={{ __html: emailHtml }}
-          />
-        </div>
+          {/* Email body preview */}
+          <div className="rounded-xl overflow-hidden border border-white/10 text-xs font-sans">
+            {/* Email header */}
+            <div
+              style={{ background: isUpcoming ? "#1d4ed8" : "#dc2626" }}
+              className="px-6 py-5"
+            >
+              <p className="text-white font-bold text-base">
+                {isUpcoming ? "📅 Due Date Reminder" : "⚠️ Overdue Notice"}
+              </p>
+              <p style={{ color: isUpcoming ? "#bfdbfe" : "#fecaca" }} className="text-xs mt-1">
+                {fromName} · Borrowers Log
+              </p>
+            </div>
 
+            {/* Email body */}
+            <div className="bg-gray-50 px-6 py-5 space-y-3 text-gray-800">
+              <p>
+                Hi <strong>Juan dela Cruz</strong>,
+              </p>
+              <p>
+                {isUpcoming
+                  ? "This is a reminder that your borrowed item is due soon."
+                  : <span>Your borrowed item is <strong style={{ color: "#dc2626" }}>overdue</strong>. Please return it as soon as possible.</span>
+                }
+              </p>
+
+              {/* Table */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
+                <tbody>
+                  {[
+                    ["Item",      "Projector"],
+                    ["Quantity",  "1"],
+                    ["Due Date",  "March 31, 2026"],
+                  ].map(([k, v], i) => (
+                    <tr key={k}>
+                      <td style={{
+                        padding: "7px 10px",
+                        border: "1px solid #e5e7eb",
+                        fontWeight: "bold",
+                        width: "40%",
+                        background: i % 2 === 0 ? "#fff" : "#f3f4f6",
+                      }}>{k}</td>
+                      <td style={{
+                        padding: "7px 10px",
+                        border: "1px solid #e5e7eb",
+                        background: i % 2 === 0 ? "#fff" : "#f3f4f6",
+                        color: k === "Due Date" ? "#dc2626" : undefined,
+                        fontWeight: k === "Due Date" ? "bold" : undefined,
+                      }}>{v}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <p style={{ color: isUpcoming ? "#111" : "#dc2626", fontWeight: isUpcoming ? "normal" : "bold" }}>
+                {isUpcoming
+                  ? "Please return the item on or before the due date to avoid overdue penalties."
+                  : "Please return the item immediately to avoid further action."
+                }
+              </p>
+              <p style={{ color: "#6b7280", fontSize: "11px" }}>— {fromName}</p>
+            </div>
+          </div>
+
+          <p className="text-gray-600 text-[10px] text-center">
+            This is a preview using sample data. Actual emails will use real borrower and item details.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -201,14 +152,11 @@ export default function RemindersPage() {
 
   const { data: upcomingData } = useGetBorrowRecordsQuery({ status: "ACTIVE", dueSoon: true });
   const { data: overdueData }  = useGetBorrowRecordsQuery({ status: "OVERDUE" });
+  const upcomingCount =
+  upcomingData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
 
-  const upcomingCount = upcomingData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
-  const overdueCount  = overdueData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
-
-  // Pick first real record as preview sample
-  const sampleUpcoming = upcomingData?.data?.find((r: any) => r.borrowerEmail);
-  const sampleOverdue  = overdueData?.data?.find((r: any) => r.borrowerEmail);
-  const previewRecord  = preview === "upcoming" ? sampleUpcoming : sampleOverdue;
+  const overdueCount =
+  overdueData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
 
   const { data: settingsData } = useGetReminderSettingsQuery(undefined);
   const [settings, setSettings] = useState({
@@ -229,21 +177,26 @@ export default function RemindersPage() {
   const [updateSettings, { isLoading: savingSettings }] = useUpdateReminderSettingsMutation();
 
   const handleSend = async (type: "upcoming" | "overdue") => {
-    try {
-      const res: any = await sendReminders({ type }).unwrap();
-      setSentType(type);
-      const sent  = res?.data?.sent ?? 0;
-      const label = type === "upcoming" ? "Upcoming" : "Overdue";
-      if (sent === 0) {
-        toast.warn(`No ${label.toLowerCase()} reminders sent (no valid emails found)`);
-      } else {
-        toast.success(`${label} reminders sent to ${sent} borrower${sent !== 1 ? "s" : ""}`);
-      }
-      setTimeout(() => setSentType(null), 3000);
-    } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to send reminders");
+  try {
+    const res: any = await sendReminders({ type }).unwrap();
+    setSentType(type);
+
+    const sent = res?.data?.sent ?? 0;
+    const label = type === "upcoming" ? "Upcoming" : "Overdue";
+
+    if (sent === 0) {
+      toast.warn(`No ${label.toLowerCase()} reminders sent (no valid emails found)`);
+    } else {
+      toast.success(
+        `${label} reminders sent to ${sent} borrower${sent !== 1 ? "s" : ""}`
+      );
     }
-  };
+
+    setTimeout(() => setSentType(null), 3000);
+  } catch (err: any) {
+    toast.error(err?.data?.message ?? "Failed to send reminders");
+  }
+};
 
   const handleSaveSettings = async () => {
     try {
@@ -266,7 +219,6 @@ export default function RemindersPage() {
         <EmailPreviewModal
           type={preview}
           settings={settings}
-          record={previewRecord}
           onClose={() => setPreview(null)}
         />
       )}
@@ -295,6 +247,7 @@ export default function RemindersPage() {
             <button
               onClick={() => setPreview("upcoming")}
               className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-[10px] font-medium transition-colors"
+              title="Preview email"
             >
               <FaEye size={10} /> Preview
             </button>
@@ -333,6 +286,7 @@ export default function RemindersPage() {
             <button
               onClick={() => setPreview("overdue")}
               className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-[10px] font-medium transition-colors"
+              title="Preview email"
             >
               <FaEye size={10} /> Preview
             </button>
@@ -368,6 +322,7 @@ export default function RemindersPage() {
           )}
         </div>
         <div className="p-5 space-y-5">
+          {/* Channels */}
           <div>
             <label className={labelCls}>Notification Channels</label>
             <div className="flex gap-3">
@@ -379,7 +334,8 @@ export default function RemindersPage() {
                     : "bg-gray-800 border-white/5 text-gray-500"
                 }`}
               >
-                <FaEnvelope size={11} /> Email
+                <FaEnvelope size={11} />
+                Email
                 {settings.emailEnabled && <FaCheck size={9} className="ml-1 text-blue-400" />}
               </button>
               <button
@@ -390,17 +346,20 @@ export default function RemindersPage() {
                     : "bg-gray-800 border-white/5 text-gray-500"
                 }`}
               >
-                <FaSms size={11} /> SMS
+                <FaSms size={11} />
+                SMS
                 {settings.smsEnabled && <FaCheck size={9} className="ml-1 text-emerald-400" />}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 items-end">
             <div>
-              <label className={labelCls}>Days Before Due to Notify</label>
+              <label className={labelCls}>Days Before Due</label>
               <input
-                type="number" min={1} max={30}
+                type="number"
+                min={1}
+                max={30}
                 value={settings.daysBefore}
                 onChange={(e) => setSetting("daysBefore", Number(e.target.value))}
                 className={inputCls}
