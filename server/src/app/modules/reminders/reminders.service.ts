@@ -20,7 +20,11 @@ const fmt = (d: Date | null | undefined) =>
       })
     : "—";
 
-const buildEmail = (type: "upcoming" | "overdue", record: any, settings: any) => {
+const buildEmail = (
+  type: "upcoming" | "overdue",
+  record: any,
+  settings: any
+) => {
   const itemName = record.item?.name ?? "Borrowed Item";
   const borrowerName = record.borrowerName ?? "Borrower";
   const dueDate = fmt(record.dueDate);
@@ -54,53 +58,49 @@ const buildEmail = (type: "upcoming" | "overdue", record: any, settings: any) =>
 // ── Settings ─────────────────────────────────────────────────
 export const getSettings = async () => {
   let settings = await prisma.reminderSettings.findFirst();
+
   if (!settings) {
     settings = await prisma.reminderSettings.create({ data: {} });
   }
+
   return settings;
 };
 
 export const updateSettings = async (data: any) => {
   const existing = await prisma.reminderSettings.findFirst();
+
   if (existing) {
     return prisma.reminderSettings.update({
       where: { id: existing.id },
       data,
     });
   }
+
   return prisma.reminderSettings.create({ data });
 };
 
-// ── Send Reminders (FINAL FIXED) ─────────────────────────────
+// ── Send Reminders (FINAL STABLE VERSION) ────────────────────
 export const sendReminders = async (type: "upcoming" | "overdue") => {
   const settings = await getSettings();
   const daysBefore = settings.daysBefore ?? 3;
 
-  // ✅ Base condition (valid emails only)
+  // ✅ SIMPLE + SAFE FILTER (no Prisma errors)
   const whereCondition: any = {
-    AND: [
-      { borrowerEmail: { not: null } },
-      { borrowerEmail: { not: "" } },
-    ],
+    borrowerEmail: {
+      not: null,
+    },
   };
 
-  // ✅ Add conditions based on type
   if (type === "upcoming") {
-    whereCondition.AND.push(
-      { status: "ACTIVE" },
-      {
-        dueDate: {
-          lte: new Date(Date.now() + daysBefore * 86400000),
-          gte: new Date(),
-        },
-      }
-    );
+    whereCondition.status = "ACTIVE";
+    whereCondition.dueDate = {
+      lte: new Date(Date.now() + daysBefore * 86400000),
+      gte: new Date(),
+    };
   }
 
   if (type === "overdue") {
-    whereCondition.AND.push({
-      status: "OVERDUE",
-    });
+    whereCondition.status = "OVERDUE";
   }
 
   const records = await prisma.borrowRecord.findMany({
@@ -116,8 +116,8 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
   let failed = 0;
 
   for (const record of records) {
-    // ✅ Extra safety (skip invalid emails)
-    if (!record.borrowerEmail || !record.borrowerEmail.includes("@")) {
+    // ✅ Extra safety check (prevents crashes & bad emails)
+    if (!record.borrowerEmail || record.borrowerEmail.trim() === "") {
       failed++;
       continue;
     }
@@ -131,6 +131,7 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
         subject,
         html,
       });
+
       sent++;
     } catch (err) {
       failed++;
