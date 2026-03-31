@@ -79,12 +79,23 @@ export const updateSettings = async (data: any) => {
   return prisma.reminderSettings.create({ data });
 };
 
-// ── Send Reminders (FINAL STABLE VERSION) ────────────────────
+// ── Send Reminders (FINAL FIXED VERSION) ─────────────────────
 export const sendReminders = async (type: "upcoming" | "overdue") => {
   const settings = await getSettings();
   const daysBefore = settings.daysBefore ?? 3;
 
-  // ✅ SIMPLE + SAFE FILTER (no Prisma errors)
+  // 🔥 AUTO-CONVERT ACTIVE → OVERDUE
+  await prisma.borrowRecord.updateMany({
+    where: {
+      status: "ACTIVE",
+      dueDate: { lt: new Date() },
+    },
+    data: {
+      status: "OVERDUE",
+    },
+  });
+
+  // ✅ FILTER ONLY VALID EMAILS
   const whereCondition: any = {
     borrowerEmail: {
       not: "",
@@ -103,10 +114,15 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
     whereCondition.status = "OVERDUE";
   }
 
+  console.log("📌 Reminder type:", type);
+  console.log("📌 Where condition:", whereCondition);
+
   const records = await prisma.borrowRecord.findMany({
     where: whereCondition,
     include: { item: true },
   });
+
+  console.log("📌 Records found:", records.length);
 
   if (records.length === 0) {
     return { count: 0, sent: 0, skipped: 0, type };
@@ -116,8 +132,7 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
   let failed = 0;
 
   for (const record of records) {
-    // ✅ Extra safety check (prevents crashes & bad emails)
-    if (!record.borrowerEmail || record.borrowerEmail.trim() === "") {
+    if (!record.borrowerEmail?.trim()) {
       failed++;
       continue;
     }
@@ -132,8 +147,10 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
         html,
       });
 
+      console.log("✅ Sent to:", record.borrowerEmail);
       sent++;
     } catch (err) {
+      console.error("❌ Failed email:", record.borrowerEmail, err);
       failed++;
     }
   }
