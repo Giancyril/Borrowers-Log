@@ -79,9 +79,11 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
   // ✅ ONLY records WITH email
   let whereCondition: any = {
     borrowerEmail: {
-      not: null,
-      notIn: [""],
-    },
+  not: "",
+  },
+  NOT: {
+    borrowerEmail: null,
+  },
   };
 
   if (type === "upcoming") {
