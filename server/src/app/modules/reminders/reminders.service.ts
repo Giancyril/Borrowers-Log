@@ -50,37 +50,49 @@ const buildEmail = (
   const noteText   = isUpcoming ? "#1e40af" : "#9a3412";
   const noteTitle  = isUpcoming ? null      : "⚠️ Action Required";
 
-  const html = `
+const html = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
       <title>${isUpcoming ? "Due Date Reminder" : "Overdue Notice"}</title>
+      <style>
+        @media only screen and (max-width: 600px) {
+          .email-wrapper { padding: 16px 0 !important; }
+          .email-card { border-radius: 0 !important; border-left: none !important; border-right: none !important; }
+          .email-header { padding: 24px 20px 20px !important; }
+          .email-body { padding: 24px 20px !important; }
+          .email-footer { padding: 20px !important; }
+          .header-badge { display: none !important; }
+          h1 { font-size: 18px !important; }
+          .detail-label { width: 90px !important; }
+        }
+      </style>
     </head>
     <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 0;">
+      <table width="100%" cellpadding="0" cellspacing="0" class="email-wrapper" style="background-color:#f1f5f9;padding:40px 0;">
         <tr>
-          <td align="center">
-            <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
+          <td align="center" style="padding:0 16px;">
+            <table cellpadding="0" cellspacing="0" class="email-card" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;">
 
               <!-- TOP ACCENT BAR -->
               <tr>
-                <td style="height:4px;background:${accentGradient};"></td>
+                <td style="height:4px;background:${accentGradient};line-height:4px;font-size:4px;">&nbsp;</td>
               </tr>
 
               <!-- HEADER -->
               <tr>
-                <td style="padding:36px 40px 28px;border-bottom:1px solid #e2e8f0;">
+                <td class="email-header" style="padding:36px 40px 28px;border-bottom:1px solid #e2e8f0;">
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
-                      <td>
+                      <td style="padding-right:12px;">
                         <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;">${fromName} · Borrowers Log</p>
-                        <h1 style="margin:0;font-size:22px;font-weight:700;color:#0f172a;">
+                        <h1 style="margin:0;font-size:22px;font-weight:700;color:#0f172a;line-height:1.3;">
                           ${isUpcoming ? "Due Date Reminder" : "Overdue Return Notice"}
                         </h1>
                       </td>
-                      <td align="right" valign="top">
+                      <td align="right" valign="top" class="header-badge" style="white-space:nowrap;">
                         <span style="display:inline-block;background:${badgeBg};color:${badgeColor};font-size:11px;font-weight:700;padding:6px 14px;border-radius:20px;border:1px solid ${badgeBorder};">
                           ${badgeLabel}
                         </span>
@@ -92,44 +104,44 @@ const buildEmail = (
 
               <!-- BODY -->
               <tr>
-                <td style="padding:32px 40px;">
+                <td class="email-body" style="padding:32px 40px;">
 
-                  <p style="margin:0 0 8px;font-size:16px;font-weight:600;color:#0f172a;">Hello, ${borrowerName}</p>
-                  <p style="margin:0 0 28px;font-size:14px;color:#64748b;line-height:1.7;">
+                  <p style="margin:0 0 6px;font-size:16px;font-weight:600;color:#0f172a;">Hello, ${borrowerName}</p>
+                  <p style="margin:0 0 24px;font-size:14px;color:#64748b;line-height:1.7;">
                     ${isUpcoming
                       ? "This is a friendly reminder that one of your borrowed items is approaching its due date. Please make arrangements to return it on time to avoid any penalties."
-                      : "Your borrowed item has <strong style=\"color:#dc2626;\">passed its due date</strong> and has not yet been returned. Kindly return it as soon as possible to avoid further action."
+                      : `Your borrowed item has <strong style="color:#dc2626;">passed its due date</strong> and has not yet been returned. Kindly return it as soon as possible to avoid further action.`
                     }
                   </p>
 
                   <!-- DETAIL CARD -->
-                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:28px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:24px;">
                     <tr>
-                      <td style="padding:16px 20px;border-bottom:1px solid #e2e8f0;">
+                      <td style="padding:14px 18px;border-bottom:1px solid #e2e8f0;">
                         <p style="margin:0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;">Borrow Details</p>
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding:0 20px;">
+                      <td style="padding:0 18px;">
                         <table width="100%" cellpadding="0" cellspacing="0">
-                          <tr style="border-bottom:1px solid #f1f5f9;">
-                            <td style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:130px;">Item</td>
-                            <td style="padding:12px 0;font-size:13px;color:#0f172a;font-weight:600;">${itemName}</td>
-                          </tr>
-                          <tr style="border-bottom:1px solid #f1f5f9;">
-                            <td style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Quantity</td>
-                            <td style="padding:12px 0;font-size:13px;color:#334155;">${record.quantityBorrowed ?? 1}</td>
-                          </tr>
-                          <tr style="border-bottom:1px solid #f1f5f9;">
-                            <td style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Due Date</td>
-                            <td style="padding:12px 0;font-size:13px;font-weight:700;color:#dc2626;">📅 ${dueDate}</td>
+                          <tr>
+                            <td class="detail-label" style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:110px;border-bottom:1px solid #f1f5f9;">Item</td>
+                            <td style="padding:12px 0;font-size:13px;color:#0f172a;font-weight:600;border-bottom:1px solid #f1f5f9;">${itemName}</td>
                           </tr>
                           <tr>
-                            <td style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;">Status</td>
+                            <td class="detail-label" style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:110px;border-bottom:1px solid #f1f5f9;">Quantity</td>
+                            <td style="padding:12px 0;font-size:13px;color:#334155;border-bottom:1px solid #f1f5f9;">${record.quantityBorrowed ?? 1}</td>
+                          </tr>
+                          <tr>
+                            <td class="detail-label" style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:110px;border-bottom:1px solid #f1f5f9;">Due Date</td>
+                            <td style="padding:12px 0;font-size:13px;font-weight:700;color:#dc2626;border-bottom:1px solid #f1f5f9;">📅 ${dueDate}</td>
+                          </tr>
+                          <tr>
+                            <td class="detail-label" style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:110px;">Status</td>
                             <td style="padding:12px 0;">
                               ${isUpcoming
-                                ? `<span style="background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #bfdbfe;">⏳ Due Soon</span>`
-                                : `<span style="background:#fff5f5;color:#dc2626;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #fecaca;">⚠️ Overdue</span>`
+                                ? `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #bfdbfe;">⏳ Due Soon</span>`
+                                : `<span style="display:inline-block;background:#fff5f5;color:#dc2626;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #fecaca;">⚠️ Overdue</span>`
                               }
                             </td>
                           </tr>
@@ -139,9 +151,9 @@ const buildEmail = (
                   </table>
 
                   <!-- NOTE BOX -->
-                  <table width="100%" cellpadding="0" cellspacing="0" style="background:${noteBg};border:1px solid ${noteBorder};border-radius:10px;margin-bottom:8px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background:${noteBg};border:1px solid ${noteBorder};border-radius:10px;">
                     <tr>
-                      <td style="padding:16px 20px;">
+                      <td style="padding:16px 18px;">
                         ${noteTitle ? `<p style="margin:0 0 6px;font-size:13px;font-weight:700;color:${noteText};">${noteTitle}</p>` : ""}
                         <p style="margin:0;font-size:13px;color:${noteText};line-height:1.6;">
                           ${isUpcoming
@@ -158,15 +170,15 @@ const buildEmail = (
 
               <!-- FOOTER -->
               <tr>
-                <td style="padding:24px 40px;background:#f8fafc;border-top:1px solid #e2e8f0;">
+                <td class="email-footer" style="padding:24px 40px;background:#f8fafc;border-top:1px solid #e2e8f0;">
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td>
                         <p style="margin:0 0 2px;font-size:13px;font-weight:700;color:#334155;">${fromName} Borrowers Log</p>
                         <p style="margin:0;font-size:12px;color:#94a3b8;">Automated Notification System</p>
                       </td>
-                      <td align="right">
-                        <p style="margin:0;font-size:11px;color:#cbd5e1;">Do not reply to this email</p>
+                      <td align="right" valign="middle">
+                        <p style="margin:0;font-size:11px;color:#cbd5e1;">Do not reply</p>
                       </td>
                     </tr>
                   </table>
