@@ -152,8 +152,11 @@ export default function RemindersPage() {
 
   const { data: upcomingData } = useGetBorrowRecordsQuery({ status: "ACTIVE", dueSoon: true });
   const { data: overdueData }  = useGetBorrowRecordsQuery({ status: "OVERDUE" });
-  const upcomingCount = upcomingData?.data?.length ?? 0;
-  const overdueCount  = overdueData?.data?.length  ?? 0;
+  const upcomingCount =
+  upcomingData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
+
+  const overdueCount =
+  overdueData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
 
   const { data: settingsData } = useGetReminderSettingsQuery(undefined);
   const [settings, setSettings] = useState({
@@ -174,22 +177,26 @@ export default function RemindersPage() {
   const [updateSettings, { isLoading: savingSettings }] = useUpdateReminderSettingsMutation();
 
   const handleSend = async (type: "upcoming" | "overdue") => {
-    try {
-      const res: any = await sendReminders({ type }).unwrap();
-      setSentType(type);
-      const sent    = res?.data?.sent    ?? 0;
-      const skipped = res?.data?.skipped ?? 0;
-      const label   = type === "upcoming" ? "Upcoming" : "Overdue";
-      if (sent === 0 && skipped > 0) {
-        toast.warn(`${label} reminders: ${skipped} skipped (no email address on file)`);
-      } else {
-        toast.success(`${label} reminders sent to ${sent} borrower${sent !== 1 ? "s" : ""}${skipped > 0 ? `, ${skipped} skipped` : ""}`);
-      }
-      setTimeout(() => setSentType(null), 3000);
-    } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to send reminders");
+  try {
+    const res: any = await sendReminders({ type }).unwrap();
+    setSentType(type);
+
+    const sent = res?.data?.sent ?? 0;
+    const label = type === "upcoming" ? "Upcoming" : "Overdue";
+
+    if (sent === 0) {
+      toast.warn(`No ${label.toLowerCase()} reminders sent (no valid emails found)`);
+    } else {
+      toast.success(
+        `${label} reminders sent to ${sent} borrower${sent !== 1 ? "s" : ""}`
+      );
     }
-  };
+
+    setTimeout(() => setSentType(null), 3000);
+  } catch (err: any) {
+    toast.error(err?.data?.message ?? "Failed to send reminders");
+  }
+};
 
   const handleSaveSettings = async () => {
     try {

@@ -1,16 +1,16 @@
 import prisma from "../../config/prisma";
 import nodemailer from "nodemailer";
 
-// ── Mailer setup ──────────────────────────────────────────────────────────────
+// ── Mailer setup ─────────────────────────────────────────────
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.GMAIL_USER, // your Gmail address e.g. youremail@gmail.com
-    pass: process.env.GMAIL_APP_PASSWORD, // Gmail App Password (not your login password)
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
   },
 });
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
 const fmt = (d: Date | null | undefined) =>
   d
     ? new Date(d).toLocaleDateString("en-PH", {
@@ -20,85 +20,38 @@ const fmt = (d: Date | null | undefined) =>
       })
     : "—";
 
-const buildEmail = (
-  type: "upcoming" | "overdue",
-  record: any,
-  settings: any
-) => {
-  const itemName     = record.item?.name ?? "Borrowed Item";
+const buildEmail = (type: "upcoming" | "overdue", record: any, settings: any) => {
+  const itemName = record.item?.name ?? "Borrowed Item";
   const borrowerName = record.borrowerName ?? "Borrower";
-  const dueDate      = fmt(record.dueDate);
-  const fromName     = settings.emailFromName      ?? "NBSC SAS";
-  const prefix       = settings.emailSubjectPrefix ?? "[Reminder]";
+  const dueDate = fmt(record.dueDate);
+  const fromName = settings.emailFromName ?? "NBSC SAS";
+  const prefix = settings.emailSubjectPrefix ?? "[Reminder]";
 
   const subject =
     type === "upcoming"
       ? `${prefix} Your borrowed item is due on ${dueDate}`
       : `${prefix} Overdue: Please return "${itemName}" immediately`;
 
-  const html =
-    type === "upcoming"
-      ? `
-        <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#111;">
-          <div style="background:#1d4ed8;padding:24px 32px;border-radius:12px 12px 0 0;">
-            <h2 style="color:#fff;margin:0;font-size:18px;">📅 Due Date Reminder</h2>
-            <p style="color:#bfdbfe;margin:4px 0 0;font-size:13px;">${fromName} · Borrowers Log</p>
-          </div>
-          <div style="background:#f9fafb;padding:28px 32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
-            <p style="margin:0 0 16px;">Hi <strong>${borrowerName}</strong>,</p>
-            <p style="margin:0 0 16px;">This is a reminder that your borrowed item is due soon.</p>
-            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-              <tr>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;font-weight:bold;width:40%;">Item</td>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;">${itemName}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 12px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:bold;">Quantity</td>
-                <td style="padding:8px 12px;background:#f3f4f6;border:1px solid #e5e7eb;">${record.quantityBorrowed}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;font-weight:bold;">Due Date</td>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;color:#dc2626;font-weight:bold;">${dueDate}</td>
-              </tr>
-            </table>
-            <p style="margin:0 0 8px;">Please return the item on or before the due date to avoid overdue penalties.</p>
-            <p style="margin:0;color:#6b7280;font-size:12px;">— ${fromName}</p>
-          </div>
-        </div>
-      `
-      : `
-        <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#111;">
-          <div style="background:#dc2626;padding:24px 32px;border-radius:12px 12px 0 0;">
-            <h2 style="color:#fff;margin:0;font-size:18px;">⚠️ Overdue Notice</h2>
-            <p style="color:#fecaca;margin:4px 0 0;font-size:13px;">${fromName} · Borrowers Log</p>
-          </div>
-          <div style="background:#f9fafb;padding:28px 32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
-            <p style="margin:0 0 16px;">Hi <strong>${borrowerName}</strong>,</p>
-            <p style="margin:0 0 16px;">Your borrowed item is <strong style="color:#dc2626;">overdue</strong>. Please return it as soon as possible.</p>
-            <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
-              <tr>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;font-weight:bold;width:40%;">Item</td>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;">${itemName}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 12px;background:#f3f4f6;border:1px solid #e5e7eb;font-weight:bold;">Quantity</td>
-                <td style="padding:8px 12px;background:#f3f4f6;border:1px solid #e5e7eb;">${record.quantityBorrowed}</td>
-              </tr>
-              <tr>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;font-weight:bold;">Due Date</td>
-                <td style="padding:8px 12px;background:#fff;border:1px solid #e5e7eb;color:#dc2626;font-weight:bold;">${dueDate}</td>
-              </tr>
-            </table>
-            <p style="margin:0 0 8px;color:#dc2626;font-weight:bold;">Please return the item immediately to avoid further action.</p>
-            <p style="margin:0;color:#6b7280;font-size:12px;">— ${fromName}</p>
-          </div>
-        </div>
-      `;
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;">
+      <h3>${type === "upcoming" ? "📅 Due Reminder" : "⚠️ Overdue Notice"}</h3>
+      <p>Hi <strong>${borrowerName}</strong>,</p>
+      <p>${
+        type === "upcoming"
+          ? "Your borrowed item is due soon."
+          : "Your borrowed item is overdue. Please return it immediately."
+      }</p>
+      <p><b>Item:</b> ${itemName}</p>
+      <p><b>Quantity:</b> ${record.quantityBorrowed}</p>
+      <p><b>Due Date:</b> ${dueDate}</p>
+      <p>— ${fromName}</p>
+    </div>
+  `;
 
   return { subject, html };
 };
 
-// ── Exported service functions ────────────────────────────────────────────────
+// ── Settings ─────────────────────────────────────────────────
 export const getSettings = async () => {
   let settings = await prisma.reminderSettings.findFirst();
   if (!settings) {
@@ -110,30 +63,43 @@ export const getSettings = async () => {
 export const updateSettings = async (data: any) => {
   const existing = await prisma.reminderSettings.findFirst();
   if (existing) {
-    return prisma.reminderSettings.update({ where: { id: existing.id }, data });
+    return prisma.reminderSettings.update({
+      where: { id: existing.id },
+      data,
+    });
   }
   return prisma.reminderSettings.create({ data });
 };
 
+// ── Send Reminders (FIXED) ───────────────────────────────────
 export const sendReminders = async (type: "upcoming" | "overdue") => {
   const settings = await getSettings();
-
-  // ── Build query ─────────────────────────────────────────────────────────────
   const daysBefore = settings.daysBefore ?? 3;
-  let whereCondition: any = {};
+
+  // ✅ ONLY records WITH email
+  let whereCondition: any = {
+    borrowerEmail: {
+      not: null,
+      notIn: [""],
+    },
+  };
 
   if (type === "upcoming") {
     whereCondition = {
+      ...whereCondition,
       status: "ACTIVE",
       dueDate: {
-        lte: new Date(Date.now() + daysBefore * 24 * 60 * 60 * 1000),
+        lte: new Date(Date.now() + daysBefore * 86400000),
         gte: new Date(),
       },
     };
   }
 
   if (type === "overdue") {
-    whereCondition = { status: "OVERDUE" };
+    whereCondition = {
+      ...whereCondition,
+      status: "OVERDUE",
+    };
   }
 
   const records = await prisma.borrowRecord.findMany({
@@ -141,42 +107,33 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
     include: { item: true },
   });
 
-  // ── Skip if nothing to send ─────────────────────────────────────────────────
   if (records.length === 0) {
     return { count: 0, sent: 0, skipped: 0, type };
   }
 
-  // ── Send emails ─────────────────────────────────────────────────────────────
-  let sent    = 0;
-  let skipped = 0;
-  const errors: string[] = [];
+  let sent = 0;
+  let failed = 0;
 
   for (const record of records) {
-    // Skip records with no email
-    if (!record.borrowerEmail) {
-      skipped++;
-      continue;
-    }
-
     const { subject, html } = buildEmail(type, record, settings);
 
     try {
       await transporter.sendMail({
-        from:    `"${settings.emailFromName ?? "NBSC SAS"}" <${process.env.GMAIL_USER}>`,
-        to:      record.borrowerEmail,
+        from: `"${settings.emailFromName}" <${process.env.GMAIL_USER}>`,
+        to: record.borrowerEmail,
         subject,
         html,
       });
       sent++;
-    } catch (err: any) {
-      errors.push(`${record.borrowerEmail}: ${err.message}`);
-      skipped++;
+    } catch (err) {
+      failed++;
     }
   }
 
-  if (errors.length > 0) {
-    console.error("[Reminders] Some emails failed:", errors);
-  }
-
-  return { count: records.length, sent, skipped, type };
+  return {
+    count: records.length,
+    sent,
+    skipped: failed,
+    type,
+  };
 };
