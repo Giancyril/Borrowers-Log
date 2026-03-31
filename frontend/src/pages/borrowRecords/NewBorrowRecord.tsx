@@ -158,7 +158,8 @@ export default function NewBorrowRecord() {
       toast.error("Please draw your signature before submitting.");
       return;
     }
-    const borrowSignature = sigRef.current.toDataURL("image/png");
+    const rawCanvas = sigRef.current.getTrimmedCanvas();
+    const borrowSignature = rawCanvas.toDataURL("image/jpeg", 0.4);
     const isBulk = cart.length > 1;
 
     try {

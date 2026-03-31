@@ -127,7 +127,8 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
       toast.error("Return signature is required.");
       return;
     }
-    const returnSignature = sigRef.current.toDataURL("image/png");
+    const rawCanvas = sigRef.current.getTrimmedCanvas();
+    const returnSignature = rawCanvas.toDataURL("image/jpeg", 0.4);
     try {
       await returnRecord({ id: record.id, conditionOnReturn, damageNotes, returnSignature }).unwrap();
       toast.success("Return processed successfully!");

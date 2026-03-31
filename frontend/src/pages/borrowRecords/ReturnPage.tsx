@@ -52,7 +52,8 @@ export default function ReturnPage() {
       toast.error("Return signature is required.");
       return;
     }
-    const returnSignature = sigRef.current.toDataURL("image/png");
+    const rawCanvas = sigRef.current.getTrimmedCanvas();
+    const returnSignature = rawCanvas.toDataURL("image/jpeg", 0.4);
     try {
       await returnRecord({
         id: id!,

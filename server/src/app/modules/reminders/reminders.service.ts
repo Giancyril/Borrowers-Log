@@ -134,14 +134,14 @@ const html = `
                           </tr>
                           <tr>
                             <td class="detail-label" style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:110px;border-bottom:1px solid #f1f5f9;">Due Date</td>
-                            <td style="padding:12px 0;font-size:13px;font-weight:700;color:#dc2626;border-bottom:1px solid #f1f5f9;">📅 ${dueDate}</td>
+                            <td style="padding:12px 0;font-size:13px;font-weight:700;color:#dc2626;border-bottom:1px solid #f1f5f9;"> ${dueDate}</td>
                           </tr>
                           <tr>
                             <td class="detail-label" style="padding:12px 0;font-size:12px;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;width:110px;">Status</td>
                             <td style="padding:12px 0;">
                               ${isUpcoming
-                                ? `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #bfdbfe;">⏳ Due Soon</span>`
-                                : `<span style="display:inline-block;background:#fff5f5;color:#dc2626;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #fecaca;">⚠️ Overdue</span>`
+                                ? `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #bfdbfe;"> Due Soon</span>`
+                                : `<span style="display:inline-block;background:#fff5f5;color:#dc2626;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid #fecaca;"> Overdue</span>`
                               }
                             </td>
                           </tr>
