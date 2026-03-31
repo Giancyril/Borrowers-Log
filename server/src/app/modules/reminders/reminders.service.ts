@@ -25,18 +25,19 @@ const buildEmail = (
   record: any,
   settings: any
 ) => {
-  const itemName     = record.item?.name        ?? "Borrowed Item";
-  const borrowerName = record.borrowerName       ?? "Borrower";
+  const itemName     = record.item?.name           ?? "Borrowed Item";
+  const borrowerName = record.borrowerName          ?? "Borrower";
   const dueDate      = fmt(record.dueDate);
-  const fromName     = settings.emailFromName    ?? "NBSC SAS";
-  const prefix       = settings.emailSubjectPrefix ?? "[Reminder]";
+  const fromName     = settings.emailFromName       ?? "NBSC SAS";
+  const prefix       = settings.emailSubjectPrefix  ?? "[Reminder]";
   const isUpcoming   = type === "upcoming";
 
   const subject = isUpcoming
     ? `${prefix} Your borrowed item is due on ${dueDate}`
     : `${prefix} Overdue: Please return "${itemName}" immediately`;
 
-  const accentColor  = isUpcoming ? "#2563eb" : "#dc2626";
+  const headerColor  = "#2563eb";
+  const bodyAccent   = isUpcoming ? "#2563eb" : "#dc2626";
   const accentLight  = isUpcoming ? "#eff6ff" : "#fff5f5";
   const accentBorder = isUpcoming ? "#bfdbfe" : "#fecaca";
   const badgeLabel   = isUpcoming ? "UPCOMING DUE DATE" : "OVERDUE NOTICE";
@@ -45,17 +46,12 @@ const buildEmail = (
     <div style="font-family:'Segoe UI',Arial,sans-serif;background:#f4f4f5;padding:32px 16px;">
       <div style="max-width:520px;margin:0 auto;">
 
-        <!-- Header -->
-        <div style="background:${accentColor};border-radius:12px 12px 0 0;padding:28px 32px 24px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-            <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:8px;font-size:18px;display:flex;align-items:center;justify-content:center;">
-              ${isUpcoming ? "📅" : "⚠️"}
-            </div>
-            <div>
-              <div style="color:rgba(255,255,255,0.7);font-size:10px;letter-spacing:2px;font-weight:700;text-transform:uppercase;">${fromName}</div>
-              <div style="color:#fff;font-size:17px;font-weight:700;margin-top:1px;">
-                ${isUpcoming ? "Due Date Reminder" : "Overdue Return Notice"}
-              </div>
+        <!-- Header — always blue -->
+        <div style="background:${headerColor};border-radius:12px 12px 0 0;padding:28px 32px 24px;">
+          <div style="margin-bottom:14px;">
+            <div style="color:rgba(255,255,255,0.7);font-size:10px;letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">${fromName}</div>
+            <div style="color:#fff;font-size:17px;font-weight:700;">
+              ${isUpcoming ? "Due Date Reminder" : "Overdue Return Notice"}
             </div>
           </div>
           <div style="display:inline-block;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.3);border-radius:999px;padding:3px 12px;">
@@ -67,7 +63,7 @@ const buildEmail = (
         <div style="background:#ffffff;border-radius:0 0 12px 12px;padding:28px 32px 32px;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
 
           <p style="margin:0 0 6px;font-size:15px;color:#111827;font-weight:600;">
-            Hi <span style="color:${accentColor};">${borrowerName}</span>,
+            Hi <span style="color:${bodyAccent};">${borrowerName}</span>,
           </p>
           <p style="margin:0 0 22px;font-size:13.5px;color:#6b7280;line-height:1.6;">
             ${isUpcoming
@@ -78,7 +74,7 @@ const buildEmail = (
 
           <!-- Detail card -->
           <div style="background:${accentLight};border:1px solid ${accentBorder};border-radius:10px;padding:18px 20px;margin-bottom:22px;">
-            <div style="font-size:10px;font-weight:800;color:${accentColor};letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:800;color:${bodyAccent};letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;">
               Borrow Details
             </div>
             <table style="width:100%;border-collapse:collapse;">
@@ -105,7 +101,7 @@ const buildEmail = (
           </div>
 
           <!-- Notice -->
-          <div style="background:${isUpcoming ? "#f9fafb" : "#fff5f5"};border-left:3px solid ${accentColor};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:24px;">
+          <div style="background:${isUpcoming ? "#f9fafb" : "#fff5f5"};border-left:3px solid ${bodyAccent};border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:24px;">
             <p style="margin:0;font-size:12.5px;color:${isUpcoming ? "#374151" : "#b91c1c"};line-height:1.6;font-weight:${isUpcoming ? "400" : "600"};">
               ${isUpcoming
                 ? "Please return the item on or before the due date to avoid overdue penalties."
