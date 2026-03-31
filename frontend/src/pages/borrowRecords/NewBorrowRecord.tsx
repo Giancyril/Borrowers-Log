@@ -293,7 +293,7 @@ export default function NewBorrowRecord() {
                 <input
                   value={borrowerForm.borrowerDepartment}
                   onChange={(e) => setBorrower("borrowerDepartment", e.target.value)}
-                  placeholder="BSIT 2A"
+                  placeholder=" "
                   className={inputCls}
                 />
               </div>
@@ -500,7 +500,7 @@ export default function NewBorrowRecord() {
             </div>
             <div className="bg-amber-500/5 border border-amber-500/15 rounded-xl px-4 py-3">
               <p className="text-amber-300/80 text-xs leading-relaxed">
-                ℹ️ By signing, the borrower acknowledges responsibility for all
+                 By signing, the borrower acknowledges responsibility for all
                 items listed above and agrees to return them by the due dates in
                 good condition.
               </p>
