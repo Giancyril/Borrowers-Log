@@ -87,7 +87,7 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
   // ✅ SIMPLE + SAFE FILTER (no Prisma errors)
   const whereCondition: any = {
     borrowerEmail: {
-      not: null,
+      not: "",
     },
   };
 
