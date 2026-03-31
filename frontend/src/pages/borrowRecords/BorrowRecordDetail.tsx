@@ -187,7 +187,7 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
               Cancel
             </button>
             <button onClick={handleReturn} disabled={isLoading || !sigDone}
-              className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all">
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all">
               {isLoading ? "Processing..." : "Confirm Return"}
             </button>
           </div>
@@ -359,7 +359,6 @@ export default function BorrowRecordDetail() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-
           <div>
             <h1 className="text-white text-xl font-bold tracking-tight">Borrow Record</h1>
             <p className="text-gray-500 text-xs font-mono mt-0.5">{record.id.slice(0, 8)}...</p>
@@ -375,20 +374,27 @@ export default function BorrowRecordDetail() {
           </div>
           {/* Row 2: action buttons */}
           <div className="flex items-center gap-1.5">
+            {canReturn && (
+              <button onClick={() => setShowReturn(true)}
+                className="h-8 px-3 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/20 flex items-center gap-1.5 text-blue-400 text-[11px] font-bold transition-all"
+                title="Process Return">
+                <FaUndo size={10} /> Return
+              </button>
+            )}
             <button onClick={() => setShowEdit(true)}
-              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400" title="Edit">
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors" title="Edit">
               <FaEdit size={11} />
             </button>
             <button onClick={() => printSlip(record)}
-              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400" title="Print Slip">
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors" title="Print Slip">
               <FaPrint size={11} />
             </button>
             <button onClick={handleReborrow}
-              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400" title="Re-borrow">
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors" title="Re-borrow">
               <FaRedo size={11} />
             </button>
             <button onClick={handleDelete}
-              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-red-400" title="Delete">
+              className="w-8 h-8 rounded-lg bg-gray-800 border border-white/5 flex items-center justify-center text-red-400 hover:text-red-300 transition-colors" title="Delete">
               <FaTrash size={11} />
             </button>
           </div>
@@ -468,14 +474,6 @@ export default function BorrowRecordDetail() {
           </div>
         </div>
       </div>
-
-      {/* ── Process Return ── */}
-      {canReturn && (
-        <button onClick={() => setShowReturn(true)}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-bold rounded-xl transition-all max-w-sm">
-          <FaUndo size={11} /> Process Return
-        </button>
-      )}
 
       {/* ── Returned Banner ── */}
       {record.status === "RETURNED" && (
