@@ -23,12 +23,12 @@ const menu = [
 ];
 
 // ─── Notification helpers ─────────────────────────────────────────────────────
-const SEEN_KEY     = "nbsc_borrow_notif_seen_id";
+const SEEN_KEY     = "nbsc_borrow_notif_seen_at";   // ← timestamp-based, not ID
 const CLEARED_KEY  = "nbsc_borrow_notif_cleared_at";
 const READ_IDS_KEY = "nbsc_borrow_notif_read_ids";
 
-function getSeenId(): string { return localStorage.getItem(SEEN_KEY) ?? ""; }
-function setSeenId(id: string) { localStorage.setItem(SEEN_KEY, id); }
+function getSeenAt(): string { return localStorage.getItem(SEEN_KEY) ?? ""; }
+function setSeenAt(ts: string) { localStorage.setItem(SEEN_KEY, ts); }
 
 function getReadIds(): Set<string> {
   try { return new Set(JSON.parse(localStorage.getItem(READ_IDS_KEY) ?? "[]")); }
@@ -71,10 +71,11 @@ function fmtRelative(dateStr: string): string {
 // ─── Notification Bell ────────────────────────────────────────────────────────
 function NotificationBell() {
   const [open,      setOpen]      = useState(false);
-  const [seenId,    setSeenIdS]   = useState(getSeenId);
+  const [seenAt,    setSeenAtS]   = useState(getSeenAt);
   const [clearedAt, setClearedAt] = useState<string>(() => localStorage.getItem(CLEARED_KEY) ?? "");
   const [readIds,   setReadIds]   = useState<Set<string>>(getReadIds);
   const dropRef                   = useRef<HTMLDivElement>(null);
+  const prevLatestIdRef           = useRef<string>("");
 
   const { data } = useGetNotificationsQuery(undefined, {
     pollingInterval: 30_000,
@@ -89,12 +90,26 @@ function NotificationBell() {
 
   const latest = logs[0];
 
+  // ── A log is unread if: not individually read AND created after seenAt ──
   const isLogUnread = (log: ActivityLog) => {
     if (readIds.has(log.id)) return false;
-    return seenId ? log.id > seenId : true;
+    if (!seenAt) return true;
+    return new Date(log.createdAt) > new Date(seenAt);
   };
 
   const unreadCount = logs.filter(isLogUnread).length;
+
+  // ── Toast on new notification ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!latest?.id) return;
+    if (!prevLatestIdRef.current) {
+      prevLatestIdRef.current = latest.id;
+      return;
+    }
+    if (latest.id !== prevLatestIdRef.current) {
+      prevLatestIdRef.current = latest.id;
+    }
+  }, [latest]);
 
   useEffect(() => {
     if (!open) return;
@@ -107,6 +122,7 @@ function NotificationBell() {
 
   const handleOpen = useCallback(() => setOpen(o => !o), []);
 
+  // ── Per-item mark as read ─────────────────────────────────────────────────
   const handleItemClick = useCallback((id: string) => {
     setReadIds(prev => {
       const next = new Set(prev);
@@ -116,22 +132,24 @@ function NotificationBell() {
     });
   }, []);
 
+  // ── Mark all read — store current timestamp as seenAt ────────────────────
   const handleMarkAllRead = useCallback(() => {
-    if (!latest?.id) return;
-    setSeenId(latest.id);
-    setSeenIdS(latest.id);
+    const now = new Date().toISOString();
+    setSeenAt(now);
+    setSeenAtS(now);
     setReadIds(new Set());
     saveReadIds(new Set());
-  }, [latest]);
+  }, []);
 
   const handleClearAll = useCallback(() => {
     const now = new Date().toISOString();
     localStorage.setItem(CLEARED_KEY, now);
     setClearedAt(now);
-    if (latest?.id) { setSeenId(latest.id); setSeenIdS(latest.id); }
+    setSeenAt(now);
+    setSeenAtS(now);
     setReadIds(new Set());
     saveReadIds(new Set());
-  }, [latest]);
+  }, []);
 
   return (
     <div ref={dropRef} className="relative">
@@ -229,7 +247,9 @@ function NotificationBell() {
                         <span className="text-gray-700 text-[10px]">·</span>
                         <span className="text-gray-600 text-[10px]">{fmtRelative(log.createdAt)}</span>
                         {isUnread && (
-                          <span className="text-[9px] text-cyan-400/60 font-medium ml-auto">tap to mark read</span>
+                          <span className="text-[9px] text-cyan-400/60 font-medium ml-auto">
+                            tap to mark read
+                          </span>
                         )}
                       </div>
                     </div>
