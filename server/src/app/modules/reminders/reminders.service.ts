@@ -71,37 +71,36 @@ export const updateSettings = async (data: any) => {
   return prisma.reminderSettings.create({ data });
 };
 
-// ── Send Reminders (FIXED) ───────────────────────────────────
+// ── Send Reminders (FINAL FIXED) ─────────────────────────────
 export const sendReminders = async (type: "upcoming" | "overdue") => {
   const settings = await getSettings();
   const daysBefore = settings.daysBefore ?? 3;
 
-  // ✅ ONLY records WITH email
-  let whereCondition: any = {
-    borrowerEmail: {
-  not: "",
-  },
-  NOT: {
-    borrowerEmail: null,
-  },
+  // ✅ Base condition (valid emails only)
+  const whereCondition: any = {
+    AND: [
+      { borrowerEmail: { not: null } },
+      { borrowerEmail: { not: "" } },
+    ],
   };
 
+  // ✅ Add conditions based on type
   if (type === "upcoming") {
-    whereCondition = {
-      ...whereCondition,
-      status: "ACTIVE",
-      dueDate: {
-        lte: new Date(Date.now() + daysBefore * 86400000),
-        gte: new Date(),
-      },
-    };
+    whereCondition.AND.push(
+      { status: "ACTIVE" },
+      {
+        dueDate: {
+          lte: new Date(Date.now() + daysBefore * 86400000),
+          gte: new Date(),
+        },
+      }
+    );
   }
 
   if (type === "overdue") {
-    whereCondition = {
-      ...whereCondition,
+    whereCondition.AND.push({
       status: "OVERDUE",
-    };
+    });
   }
 
   const records = await prisma.borrowRecord.findMany({
@@ -117,6 +116,12 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
   let failed = 0;
 
   for (const record of records) {
+    // ✅ Extra safety (skip invalid emails)
+    if (!record.borrowerEmail || !record.borrowerEmail.includes("@")) {
+      failed++;
+      continue;
+    }
+
     const { subject, html } = buildEmail(type, record, settings);
 
     try {
