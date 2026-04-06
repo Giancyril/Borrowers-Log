@@ -455,11 +455,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     <p className="text-white text-xs font-semibold truncate">{user?.name || user?.username || "System Admin"}</p>
                     <p className="text-gray-500 text-[10px] mt-0.5 truncate">{user?.email || ""}</p>
                   </div>
-                  <div className="py-1">
-                    <div className="w-full px-4 py-2 text-gray-500 text-[10px] uppercase font-bold tracking-widest">
-                      Admin Mode
-                    </div>
-                  </div>
+                  
                 </div>
               )}
             </div>
