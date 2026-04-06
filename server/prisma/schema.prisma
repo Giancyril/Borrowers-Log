@@ -87,7 +87,7 @@ model Item {
   updatedAt      DateTime     @updatedAt
 
   borrowRecords  BorrowRecord[]
-  borrowRequests BorrowRequest[] // ✅ fixed naming
+  borrowRequests BorrowRequest[]
 
   @@map("items")
 }
@@ -158,7 +158,6 @@ model BorrowRequest {
   status          RequestStatus @default(PENDING)
   rejectionReason String        @default("")
 
-  // ✅ FIXED: must be unique for 1-to-1
   borrowRecordId String?       @unique
   borrowRecord   BorrowRecord? @relation(fields: [borrowRecordId], references: [id])
 
@@ -170,7 +169,7 @@ model BorrowRequest {
 }
 
 model ReminderSettings {
-  id                 String  @id @default("singleton") // ✅ only one row
+  id                 String  @id @default("singleton")
   emailEnabled       Boolean @default(true)
   smsEnabled         Boolean @default(false)
   daysBefore         Int     @default(3)

@@ -2,11 +2,11 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FaTachometerAlt, FaBoxOpen, FaClipboardList, FaExclamationTriangle,
-  FaBars, FaTimes, FaSignOutAlt, FaChevronDown, FaCog, FaChartBar,
+  FaBars, FaTimes, FaChevronDown, FaChartBar,
   FaHistory, FaInbox, FaBell, FaPlus, FaShare, FaTrash, FaEdit,
   FaCheck, FaUndo, FaArchive,
 } from "react-icons/fa";
-import { signOut, useAdminUser } from "../../auth/auth";
+import { useAdminUser } from "../../auth/auth";
 import { useGetDashboardStatsQuery, useGetBorrowRequestsQuery, useGetNotificationsQuery } from "../../redux/api/api";
 import type { ActivityLog } from "../../types/types";
 import OnboardingTour from "../../components/ui/OnboardingTour";
@@ -443,7 +443,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <span className="text-white text-[10px] font-black">{initial}</span>
                 </div>
                 <span className="hidden sm:block text-white text-xs font-semibold max-w-[120px] truncate">
-                  {user?.username || user?.name || "Admin"}
+                  {user?.name || user?.username || "System Admin"}
                 </span>
                 <FaChevronDown size={9}
                   className={`hidden sm:block text-gray-500 transition-transform duration-200 ${profileOpen ? "rotate-180" : ""}`} />
@@ -452,15 +452,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {profileOpen && (
                 <div className="absolute right-0 top-10 w-44 bg-gray-900 border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
                   <div className="px-4 py-3 border-b border-white/5">
-                    <p className="text-white text-xs font-semibold truncate">{user?.username || user?.name || " "}</p>
+                    <p className="text-white text-xs font-semibold truncate">{user?.name || user?.username || "System Admin"}</p>
                     <p className="text-gray-500 text-[10px] mt-0.5 truncate">{user?.email || ""}</p>
                   </div>
                   <div className="py-1">
-                    <Link to="/settings" onClick={() => setProfileOpen(false)}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-white hover:bg-white/5 transition-colors text-xs">
-                      <FaCog size={11} className="text-gray-400 shrink-0" />
-                      Settings
-                    </Link>
+                    <div className="w-full px-4 py-2 text-gray-500 text-[10px] uppercase font-bold tracking-widest">
+                      Admin Mode
+                    </div>
                   </div>
                 </div>
               )}

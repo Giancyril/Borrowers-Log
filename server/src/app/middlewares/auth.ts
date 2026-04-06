@@ -24,11 +24,11 @@ const auth = () => {
     try {
       // Mock admin user for session-less access
       req.user = {
-        id: "admin-id",
+        id: "00000000-0000-0000-0000-000000000000",
         email: "admin@nbsc.edu.ph",
         role: "ADMIN",
         username: "admin",
-        name: "Administrator",
+        name: "System Admin",
       };
       next();
     } catch (err) {

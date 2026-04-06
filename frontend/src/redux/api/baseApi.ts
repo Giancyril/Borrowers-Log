@@ -6,7 +6,7 @@ export const baseApi = createApi({
   refetchOnFocus: true,
   refetchOnReconnect: true,
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://borrowers-log.onrender.com/api",
+    baseUrl: (import.meta.env.VITE_API_URL as string) || "http://localhost:5001/api",
     prepareHeaders: (headers) => {
       const token = getToken();
       if (token) headers.set("authorization", token);

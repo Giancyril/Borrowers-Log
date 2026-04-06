@@ -8,11 +8,11 @@ export const getToken = () => "mock-admin-token";
 export const removeToken = () => {};
 
 export const decodeToken = (_token: string): DecodedToken => ({
-  id: "admin-id",
+  id: "00000000-0000-0000-0000-000000000000",
   email: "admin@nbsc.edu.ph",
   role: "ADMIN",
   username: "admin",
-  name: "Administrator",
+  name: "System Admin",
   exp: Math.floor(Date.now() / 1000) + 3600,
   iat: Math.floor(Date.now() / 1000),
 });

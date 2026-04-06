@@ -14,7 +14,7 @@ import BorrowRecordDetail from "./pages/borrowRecords/BorrowRecordDetail";
 import NewBorrowRecord from "./pages/borrowRecords/NewBorrowRecord";
 import ReturnPage from "./pages/borrowRecords/ReturnPage";
 import OverduePage from "./pages/borrowRecords/OverduePage";
-import SettingsPage from "./pages/settings/SettingsPage";
+
 import BorrowerHistory from "./pages/borrowRecords/BorrowerHistory";
 import AnalyticsPage from "./pages/analytics/AnalyticsPage";
 import ActivityLogsPage from "./pages/activity/ActivityLogsPage";
@@ -38,7 +38,7 @@ const router = createBrowserRouter([
       { path: "borrow-records/:id", element: <DashboardLayout><BorrowRecordDetail /></DashboardLayout> },
       { path: "borrow-records/:id/return", element: <DashboardLayout><ReturnPage /></DashboardLayout> },
       { path: "overdue",          element: <DashboardLayout><OverduePage /></DashboardLayout> },
-      { path: "settings",         element: <DashboardLayout><SettingsPage /></DashboardLayout> },
+
       { path: "borrowers/:name",  element: <DashboardLayout><BorrowerHistory /></DashboardLayout> },
       { path: "analytics",        element: <DashboardLayout><AnalyticsPage /></DashboardLayout> },
       { path: "activity-logs",    element: <DashboardLayout><ActivityLogsPage /></DashboardLayout> },
