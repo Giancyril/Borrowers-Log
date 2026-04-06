@@ -2,34 +2,31 @@ import { jwtDecode } from "jwt-decode";
 import { useEffect, useState } from "react";
 import type { DecodedToken } from "../types/types";
 
-export const setToken = (token: string) => localStorage.setItem("bl_token", token);
-export const getToken = () => localStorage.getItem("bl_token");
-export const removeToken = () => localStorage.removeItem("bl_token");
+// Auth is now removed; these are kept as mocks for compatibility
+export const setToken = (_token: string) => {};
+export const getToken = () => "mock-admin-token";
+export const removeToken = () => {};
 
-export const decodeToken = (token: string): DecodedToken => jwtDecode(token);
+export const decodeToken = (_token: string): DecodedToken => ({
+  id: "admin-id",
+  email: "admin@nbsc.edu.ph",
+  role: "ADMIN",
+  username: "admin",
+  name: "Administrator",
+  exp: Math.floor(Date.now() / 1000) + 3600,
+  iat: Math.floor(Date.now() / 1000),
+});
 
 export const useAdminUser = () => {
   const [user, setUser] = useState<DecodedToken | null>(null);
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      try { setUser(decodeToken(token)); }
-      catch { removeToken(); }
-    }
+    setUser(decodeToken("mock"));
   }, []);
   return user;
 };
 
-export const signOut = (navigate: (path: string) => void) => {
-  removeToken();
-  navigate("/login");
+export const signOut = (_navigate?: (path: string) => void) => {
+  // No-op
 };
 
-export const isAuthenticated = (): boolean => {
-  const token = getToken();
-  if (!token) return false;
-  try {
-    const decoded = decodeToken(token);
-    return decoded.exp * 1000 > Date.now();
-  } catch { return false; }
-};
+export const isAuthenticated = (): boolean => true;

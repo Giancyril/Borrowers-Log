@@ -461,12 +461,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       <FaCog size={11} className="text-gray-400 shrink-0" />
                       Settings
                     </Link>
-                    <div className="mx-3 my-1 border-t border-white/5" />
-                    <button onClick={() => { setProfileOpen(false); signOut(navigate); }}
-                      className="w-full flex items-center gap-3 px-4 py-2.5 text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs">
-                      <FaSignOutAlt size={11} className="text-red-400 shrink-0" />
-                      Sign Out
-                    </button>
                   </div>
                 </div>
               )}

@@ -4,10 +4,8 @@ import { Provider } from "react-redux";
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import "./index.css";
 import { store } from "./redux/store";
-import { isAuthenticated } from "./auth/auth";
 
 import App from "./App";
-import Login from "./pages/login/Login";
 import DashboardLayout from "./pages/dashboard/DashboardLayout";
 import Overview from "./pages/dashboard/Overview";
 import ItemsPage from "./pages/items/ItemsPage";
@@ -24,22 +22,13 @@ import BorrowRequestsPage from "./pages/borrowRequests/BorrowRequestsPage";
 import BorrowRequestForm from "./pages/borrowRequests/BorrowRequestForm";
 import RemindersPage from "./pages/reminders/RemindersPage";
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  if (!isAuthenticated()) return <Navigate to="/login" replace />;
-  return <>{children}</>;
-};
-
+// router configuration with authentication removed
 const router = createBrowserRouter([
-  { path: "/login", element: <Login /> },
   // Public borrower-facing request form — no auth required
   { path: "/request", element: <BorrowRequestForm /> },
   {
     path: "/",
-    element: (
-      <ProtectedRoute>
-        <App />
-      </ProtectedRoute>
-    ),
+    element: <App />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard",        element: <DashboardLayout><Overview /></DashboardLayout> },

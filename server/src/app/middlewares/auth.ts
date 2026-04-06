@@ -22,14 +22,14 @@ declare global {
 const auth = () => {
   return async (req: Request, _res: Response, next: NextFunction) => {
     try {
-      const token = req.headers.authorization;
-      if (!token) throw new AppError(StatusCodes.UNAUTHORIZED, "You are not authorized!");
-
-      const secret = process.env.JWT_SECRET;
-      if (!secret) throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, "JWT secret not configured");
-
-      const decoded = jwt.verify(token, secret) as JwtPayload;
-      req.user = decoded;
+      // Mock admin user for session-less access
+      req.user = {
+        id: "admin-id",
+        email: "admin@nbsc.edu.ph",
+        role: "ADMIN",
+        username: "admin",
+        name: "Administrator",
+      };
       next();
     } catch (err) {
       next(err);
