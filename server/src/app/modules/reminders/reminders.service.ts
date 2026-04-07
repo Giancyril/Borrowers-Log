@@ -1,14 +1,8 @@
 import prisma from "../../config/prisma";
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 
 // ── Mailer setup ─────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD,
-  },
-});
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
 // ── Helpers ──────────────────────────────────────────────────
 const fmt = (d: Date | null | undefined) =>
@@ -199,52 +193,37 @@ const html = `
 // ── Settings ─────────────────────────────────────────────────
 export const getSettings = async () => {
   let settings = await prisma.reminderSettings.findFirst();
-
   if (!settings) {
     settings = await prisma.reminderSettings.create({ data: {} });
   }
-
   return settings;
 };
 
 export const updateSettings = async (data: any) => {
   const existing = await prisma.reminderSettings.findFirst();
-
   if (existing) {
-    return prisma.reminderSettings.update({
-      where: { id: existing.id },
-      data,
-    });
+    return prisma.reminderSettings.update({ where: { id: existing.id }, data });
   }
-
   return prisma.reminderSettings.create({ data });
 };
 
-// ── Send Reminders (FINAL FIXED VERSION) ─────────────────────
+// ── Send Reminders ────────────────────────────────────────────
 export const sendReminders = async (type: "upcoming" | "overdue") => {
-  const settings = await getSettings();
+  const settings   = await getSettings();
   const daysBefore = settings.daysBefore ?? 3;
 
-  // 🔥 AUTO-CONVERT ACTIVE → OVERDUE
+  // Auto-convert ACTIVE → OVERDUE
   await prisma.borrowRecord.updateMany({
-    where: {
-      status: "ACTIVE",
-      dueDate: { lt: new Date() },
-    },
-    data: {
-      status: "OVERDUE",
-    },
+    where: { status: "ACTIVE", dueDate: { lt: new Date() } },
+    data:  { status: "OVERDUE" },
   });
 
-  // ✅ FILTER ONLY VALID EMAILS
   const whereCondition: any = {
-    borrowerEmail: {
-      not: "",
-    },
+    borrowerEmail: { not: "" },
   };
 
   if (type === "upcoming") {
-    whereCondition.status = "ACTIVE";
+    whereCondition.status  = "ACTIVE";
     whereCondition.dueDate = {
       lte: new Date(Date.now() + daysBefore * 86400000),
       gte: new Date(),
@@ -269,21 +248,21 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
     return { count: 0, sent: 0, skipped: 0, type };
   }
 
-  let sent = 0;
+  let sent   = 0;
   let failed = 0;
 
   for (const record of records) {
-    if (!record.borrowerEmail?.trim()) {
-      failed++;
-      continue;
-    }
+    if (!record.borrowerEmail?.trim()) { failed++; continue; }
 
     const { subject, html } = buildEmail(type, record, settings);
 
     try {
-      await transporter.sendMail({
-        from: `"${settings.emailFromName}" <${process.env.GMAIL_USER}>`,
-        to: record.borrowerEmail,
+      await sgMail.send({
+        from: {
+          name:  settings.emailFromName ?? "NBSC SAS",
+          email: process.env.SMTP_FROM_EMAIL ?? "mijaresgiancyril@gmail.com",
+        },
+        to:      record.borrowerEmail,
         subject,
         html,
       });
@@ -296,10 +275,5 @@ export const sendReminders = async (type: "upcoming" | "overdue") => {
     }
   }
 
-  return {
-    count: records.length,
-    sent,
-    skipped: failed,
-    type,
-  };
+  return { count: records.length, sent, skipped: failed, type };
 };

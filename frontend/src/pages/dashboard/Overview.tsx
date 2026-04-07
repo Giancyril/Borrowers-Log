@@ -57,38 +57,6 @@ export default function Overview() {
         </div>
       </div>
 
-      {/* ── Due date warning banners ── */}
-      {(dueTodayCount > 0 || dueTomorrowCount > 0) && (
-        <div className="flex flex-col sm:flex-row gap-2">
-          {dueTodayCount > 0 && (
-            <Link to="/borrow-records?status=ACTIVE"
-              className="flex-1 flex items-center gap-3 px-4 py-3 bg-red-500/8 border border-red-500/25 rounded-xl hover:bg-red-500/12 transition-all group">
-              <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/25 flex items-center justify-center shrink-0">
-                <FaClock size={13} className="text-red-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-red-300 text-xs font-bold">{dueTodayCount} item{dueTodayCount !== 1 ? "s" : ""} due TODAY</p>
-                <p className="text-red-500/70 text-[10px]">Must be returned today</p>
-              </div>
-              <FaArrowRight size={10} className="text-red-500/40 group-hover:text-red-400 transition-colors shrink-0" />
-            </Link>
-          )}
-          {dueTomorrowCount > 0 && (
-            <Link to="/borrow-records?status=ACTIVE"
-              className="flex-1 flex items-center gap-3 px-4 py-3 bg-amber-500/8 border border-amber-500/25 rounded-xl hover:bg-amber-500/12 transition-all group">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
-                <FaCalendarDay size={13} className="text-amber-400" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-amber-300 text-xs font-bold">{dueTomorrowCount} item{dueTomorrowCount !== 1 ? "s" : ""} due TOMORROW</p>
-                <p className="text-amber-500/70 text-[10px]">Remind borrowers today</p>
-              </div>
-              <FaArrowRight size={10} className="text-amber-500/40 group-hover:text-amber-400 transition-colors shrink-0" />
-            </Link>
-          )}
-        </div>
-      )}
-
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(({ label, value, icon: Icon, color, href }) => (

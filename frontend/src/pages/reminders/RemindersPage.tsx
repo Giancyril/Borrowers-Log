@@ -88,7 +88,7 @@ function EmailPreviewModal({
             {/* Email body */}
             <div className="bg-gray-50 px-6 py-5 space-y-3 text-gray-800">
               <p>
-                Hi <strong>Juan dela Cruz</strong>,
+                Hi <strong>(Name)</strong>,
               </p>
               <p>
                 {isUpcoming
