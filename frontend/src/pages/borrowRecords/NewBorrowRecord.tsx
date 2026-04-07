@@ -232,7 +232,7 @@ export default function NewBorrowRecord() {
             )}
           </div>
           <p className="text-gray-500 text-sm">
-            Admin log — step {step + 1} of {steps.length}
+            Step {step + 1} of {steps.length} — {steps[step]}
           </p>
         </div>
       </div>
