@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
+import { getSignatureData } from "../../utils/signature";
 import {
   useGetSingleBorrowRecordQuery,
   useReturnBorrowRecordMutation,
@@ -52,7 +53,7 @@ export default function ReturnPage() {
       toast.error("Return signature is required.");
       return;
     }
-    const returnSignature = JSON.stringify(sigRef.current.toData());
+    const returnSignature = getSignatureData(sigRef);
     try {
       await returnRecord({
         id: id!,

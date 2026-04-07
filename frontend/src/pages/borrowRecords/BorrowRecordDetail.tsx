@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
-import { signatureToDisplay } from "../../utils/signature";
+import { getSignatureData, signatureToDisplay } from "../../utils/signature";
 import {
   useGetSingleBorrowRecordQuery,
   useReturnBorrowRecordMutation,
@@ -128,7 +128,7 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
       toast.error("Return signature is required.");
       return;
     }
-    const returnSignature = JSON.stringify(sigRef.current.toData());
+    const returnSignature = getSignatureData(sigRef);
     try {
       await returnRecord({ id: record.id, conditionOnReturn, damageNotes, returnSignature }).unwrap();
       toast.success("Return processed successfully!");

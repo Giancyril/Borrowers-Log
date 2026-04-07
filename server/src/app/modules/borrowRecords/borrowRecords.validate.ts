@@ -3,7 +3,10 @@ import { z } from "zod";
 const signatureSchema = z
   .string()
   .min(1, "Signature is required")
-  .refine((v) => v.startsWith("data:image/"), "Must be a valid image data URI");
+  .refine(
+    (v) => v.startsWith("data:image/") || v.startsWith("["),
+    "Must be a valid signature (image data URI or JSON stroke data)"
+  );
 
 export const createBorrowRecordSchema = z.object({
   itemId:             z.string().uuid("Invalid item ID"),

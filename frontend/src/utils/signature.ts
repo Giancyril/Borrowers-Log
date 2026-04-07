@@ -5,11 +5,12 @@
 /**
  * Extracts stroke point arrays from the signature canvas
  * @param sigRef Reference to the SignatureCanvas component
- * @returns Array of stroke data or null if empty
+ * @returns JSON string of stroke data or null if empty
  */
-export const getSignatureData = (sigRef: React.RefObject<any>) => {
-  if (!sigRef.current || sigRef.current.isEmpty()) return null;
-  return sigRef.current.toData();
+export const getSignatureData = (sigRef: React.RefObject<any>): string => {
+  if (!sigRef.current || sigRef.current.isEmpty()) return "";
+  const data = sigRef.current.toData();
+  return JSON.stringify(data);
 };
 
 /**
@@ -37,14 +38,12 @@ export const signatureToDisplay = (signatureData: string | null): string | null 
 
   if (!Array.isArray(strokes) || strokes.length === 0) return null;
 
-  // Create canvas for reconstruction
+  // Create canvas for reconstruction (match typical signature canvas size)
   const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 160;
   const ctx = canvas.getContext('2d');
   if (!ctx) return null;
-
-  // Set canvas size (adjust as needed, or calculate from strokes)
-  canvas.width = 400;
-  canvas.height = 200;
 
   // Clear with transparent background
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -57,15 +56,10 @@ export const signatureToDisplay = (signatureData: string | null): string | null 
 
   // Draw each stroke
   strokes.forEach((stroke: any[]) => {
-    if (stroke.length === 0) return;
-
+    if (stroke.length < 2) return;
     ctx.beginPath();
     ctx.moveTo(stroke[0].x, stroke[0].y);
-
-    for (let i = 1; i < stroke.length; i++) {
-      ctx.lineTo(stroke[i].x, stroke[i].y);
-    }
-
+    stroke.slice(1).forEach((point: any) => ctx.lineTo(point.x, point.y));
     ctx.stroke();
   });
 

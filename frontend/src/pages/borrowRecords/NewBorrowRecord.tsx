@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
+import { getSignatureData } from "../../utils/signature";
 import {
   useGetItemsQuery,
   useCreateBorrowRecordMutation,
@@ -158,7 +159,7 @@ export default function NewBorrowRecord() {
       toast.error("Please draw your signature before submitting.");
       return;
     }
-    const borrowSignature = JSON.stringify(sigRef.current.toData());
+    const borrowSignature = getSignatureData(sigRef);
     const isBulk = cart.length > 1;
 
     try {
@@ -270,7 +271,7 @@ export default function NewBorrowRecord() {
               <input
                 value={borrowerForm.borrowerName}
                 onChange={(e) => setBorrower("borrowerName", e.target.value)}
-                placeholder="Juan dela Cruz"
+                placeholder=" "
                 className={inputCls}
               />
               {errors.borrowerName && (
@@ -284,7 +285,7 @@ export default function NewBorrowRecord() {
                   type="email"
                   value={borrowerForm.borrowerEmail}
                   onChange={(e) => setBorrower("borrowerEmail", e.target.value)}
-                  placeholder="juan@nbsc.edu.ph"
+                  placeholder=" "
                   className={inputCls}
                 />
               </div>
