@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
+import { signatureToDisplay } from "../../utils/signature";
 import {
   useGetSingleBorrowRecordQuery,
   useReturnBorrowRecordMutation,
@@ -127,8 +128,7 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
       toast.error("Return signature is required.");
       return;
     }
-    const rawCanvas = sigRef.current.getTrimmedCanvas();
-    const returnSignature = rawCanvas.toDataURL("image/jpeg", 0.4);
+    const returnSignature = JSON.stringify(sigRef.current.toData());
     try {
       await returnRecord({ id: record.id, conditionOnReturn, damageNotes, returnSignature }).unwrap();
       toast.success("Return processed successfully!");
@@ -200,6 +200,8 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
 
 // ── Print Slip ────────────────────────────────────────────────────────────────
 const printSlip = (record: BorrowRecord) => {
+  const borrowSigDisplay = signatureToDisplay(record.borrowSignature);
+  const returnSigDisplay = signatureToDisplay(record.returnSignature);
   const w = window.open("", "_blank", "width=700,height=900");
   if (!w) return;
   w.document.write(`
@@ -261,14 +263,14 @@ const printSlip = (record: BorrowRecord) => {
       <div class="sig-row">
         <div class="sig-box">
           <p>Borrow Signature</p>
-          ${record.borrowSignature
-            ? `<img class="sig-img" src="${record.borrowSignature}" />`
+          ${borrowSigDisplay
+            ? `<img class="sig-img" src="${borrowSigDisplay}" />`
             : `<div class="sig-placeholder">No signature</div>`}
         </div>
         <div class="sig-box">
           <p>Return Signature</p>
-          ${record.returnSignature
-            ? `<img class="sig-img" src="${record.returnSignature}" />`
+          ${returnSigDisplay
+            ? `<img class="sig-img" src="${returnSigDisplay}" />`
             : `<div class="sig-placeholder">Not yet returned</div>`}
         </div>
       </div>
@@ -292,6 +294,9 @@ export default function BorrowRecordDetail() {
   const [deleteRecord] = useDeleteBorrowRecordMutation();
 
   const record = data?.data as BorrowRecord | undefined;
+
+  const borrowSigDisplay = record ? signatureToDisplay(record.borrowSignature) : null;
+  const returnSigDisplay = record ? signatureToDisplay(record.returnSignature) : null;
 
   const handleDelete = async () => {
     const ok = await confirm({
@@ -459,15 +464,15 @@ export default function BorrowRecordDetail() {
         <div className="px-5 py-4 grid grid-cols-2 gap-4">
           <div>
             <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2">Borrow Signature</p>
-            {record.borrowSignature
-              ? <img src={record.borrowSignature} alt="Borrow signature" className="w-full h-28 object-contain bg-gray-800 rounded-xl border border-white/5 p-2" />
+            {borrowSigDisplay
+              ? <img src={borrowSigDisplay} alt="Borrow signature" className="w-full h-28 object-contain bg-gray-800 rounded-xl border border-white/5 p-2" />
               : <div className="w-full h-28 bg-gray-800 rounded-xl border border-white/5 flex items-center justify-center text-gray-600 text-xs">No signature</div>
             }
           </div>
           <div>
             <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold mb-2">Return Signature</p>
-            {record.returnSignature
-              ? <img src={record.returnSignature} alt="Return signature" className="w-full h-28 object-contain bg-gray-800 rounded-xl border border-white/5 p-2" />
+            {returnSigDisplay
+              ? <img src={returnSigDisplay} alt="Return signature" className="w-full h-28 object-contain bg-gray-800 rounded-xl border border-white/5 p-2" />
               : <div className="w-full h-28 bg-gray-800 rounded-xl border border-dashed border-white/10 flex items-center justify-center text-gray-600 text-xs">
                   {canReturn ? "Pending return" : "—"}
                 </div>
