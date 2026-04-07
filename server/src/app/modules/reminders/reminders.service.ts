@@ -22,7 +22,7 @@ const buildEmail = (
   const itemName     = record.item?.name          ?? "Borrowed Item";
   const borrowerName = record.borrowerName         ?? "Borrower";
   const dueDate      = fmt(record.dueDate);
-  const fromName     = settings.emailFromName      ?? "NBSC SAS";
+  const fromName     = settings.emailFromName      ?? "NBSC SAS Borrowers Log";
   const prefix       = settings.emailSubjectPrefix ?? "[Reminder]";
   const isUpcoming   = type === "upcoming";
 

@@ -8,7 +8,7 @@ import {
 import { toast } from "react-toastify";
 import {
   FaBell, FaClock, FaExclamationTriangle,
-  FaEnvelope, FaSms, FaCheck, FaSpinner, FaEye, FaTimes,
+  FaEnvelope, FaCheck, FaSpinner, FaEye, FaTimes,
 } from "react-icons/fa";
 
 const inputCls =
@@ -26,8 +26,8 @@ function EmailPreviewModal({
   settings: any;
   onClose: () => void;
 }) {
-  const fromName = settings.emailFromName      || "NBSC SAS";
-  const prefix   = settings.emailSubjectPrefix || "[Reminder]";
+  const fromName   = settings.emailFromName      || "NBSC SAS";
+  const prefix     = settings.emailSubjectPrefix || "[Reminder]";
   const isUpcoming = type === "upcoming";
 
   const subject = isUpcoming
@@ -37,7 +37,6 @@ function EmailPreviewModal({
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-lg shadow-2xl max-h-[90vh] flex flex-col">
-        {/* Modal header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div>
             <h3 className="text-sm font-bold text-white">Email Preview</h3>
@@ -54,7 +53,6 @@ function EmailPreviewModal({
         </div>
 
         <div className="overflow-y-auto p-5 space-y-4">
-          {/* Meta */}
           <div className="bg-gray-800 rounded-xl p-4 space-y-2 text-xs">
             <div className="flex gap-2">
               <span className="text-gray-500 w-14 shrink-0">From</span>
@@ -70,13 +68,8 @@ function EmailPreviewModal({
             </div>
           </div>
 
-          {/* Email body preview */}
           <div className="rounded-xl overflow-hidden border border-white/10 text-xs font-sans">
-            {/* Email header */}
-            <div
-              style={{ background: isUpcoming ? "#1d4ed8" : "#dc2626" }}
-              className="px-6 py-5"
-            >
+            <div style={{ background: isUpcoming ? "#1d4ed8" : "#dc2626" }} className="px-6 py-5">
               <p className="text-white font-bold text-base">
                 {isUpcoming ? "📅 Due Date Reminder" : "⚠️ Overdue Notice"}
               </p>
@@ -84,47 +77,28 @@ function EmailPreviewModal({
                 {fromName} · Borrowers Log
               </p>
             </div>
-
-            {/* Email body */}
             <div className="bg-gray-50 px-6 py-5 space-y-3 text-gray-800">
-              <p>
-                Hi <strong>(Name)</strong>,
-              </p>
+              <p>Hi <strong>(Name)</strong>,</p>
               <p>
                 {isUpcoming
                   ? "This is a reminder that your borrowed item is due soon."
                   : <span>Your borrowed item is <strong style={{ color: "#dc2626" }}>overdue</strong>. Please return it as soon as possible.</span>
                 }
               </p>
-
-              {/* Table */}
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px" }}>
                 <tbody>
                   {[
-                    ["Item",      "Projector"],
-                    ["Quantity",  "1"],
-                    ["Due Date",  "March 31, 2026"],
+                    ["Item",     "Projector"],
+                    ["Quantity", "1"],
+                    ["Due Date", "March 31, 2026"],
                   ].map(([k, v], i) => (
                     <tr key={k}>
-                      <td style={{
-                        padding: "7px 10px",
-                        border: "1px solid #e5e7eb",
-                        fontWeight: "bold",
-                        width: "40%",
-                        background: i % 2 === 0 ? "#fff" : "#f3f4f6",
-                      }}>{k}</td>
-                      <td style={{
-                        padding: "7px 10px",
-                        border: "1px solid #e5e7eb",
-                        background: i % 2 === 0 ? "#fff" : "#f3f4f6",
-                        color: k === "Due Date" ? "#dc2626" : undefined,
-                        fontWeight: k === "Due Date" ? "bold" : undefined,
-                      }}>{v}</td>
+                      <td style={{ padding: "7px 10px", border: "1px solid #e5e7eb", fontWeight: "bold", width: "40%", background: i % 2 === 0 ? "#fff" : "#f3f4f6" }}>{k}</td>
+                      <td style={{ padding: "7px 10px", border: "1px solid #e5e7eb", background: i % 2 === 0 ? "#fff" : "#f3f4f6", color: k === "Due Date" ? "#dc2626" : undefined, fontWeight: k === "Due Date" ? "bold" : undefined }}>{v}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-
               <p style={{ color: isUpcoming ? "#111" : "#dc2626", fontWeight: isUpcoming ? "normal" : "bold" }}>
                 {isUpcoming
                   ? "Please return the item on or before the due date to avoid overdue penalties."
@@ -149,19 +123,17 @@ export default function RemindersPage() {
   const [sentType,      setSentType]      = useState<string | null>(null);
   const [settingsDirty, setSettingsDirty] = useState(false);
   const [preview,       setPreview]       = useState<"upcoming" | "overdue" | null>(null);
+  const [isSending,     setIsSending]     = useState(false);
 
   const { data: upcomingData } = useGetBorrowRecordsQuery({ status: "ACTIVE", dueSoon: true });
   const { data: overdueData }  = useGetBorrowRecordsQuery({ status: "OVERDUE" });
-  const upcomingCount =
-  upcomingData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
 
-  const overdueCount =
-  overdueData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
+  const upcomingCount = upcomingData?.data?.filter((r: any) => r.borrowerEmail)?.length ?? 0;
+  const overdueCount  = overdueData?.data?.filter((r: any) => r.borrowerEmail)?.length  ?? 0;
 
   const { data: settingsData } = useGetReminderSettingsQuery(undefined);
   const [settings, setSettings] = useState({
     emailEnabled:       true,
-    smsEnabled:         false,
     daysBefore:         3,
     emailFromName:      "NBSC SAS",
     emailSubjectPrefix: "[Reminder]",
@@ -177,26 +149,28 @@ export default function RemindersPage() {
   const [updateSettings, { isLoading: savingSettings }] = useUpdateReminderSettingsMutation();
 
   const handleSend = async (type: "upcoming" | "overdue") => {
-  try {
-    const res: any = await sendReminders({ type }).unwrap();
-    setSentType(type);
+    if (isSending) return;
+    setIsSending(true);
+    try {
+      const res: any = await sendReminders({ type }).unwrap();
+      setSentType(type);
 
-    const sent = res?.data?.sent ?? 0;
-    const label = type === "upcoming" ? "Upcoming" : "Overdue";
+      const sent  = res?.data?.sent ?? 0;
+      const label = type === "upcoming" ? "Upcoming" : "Overdue";
 
-    if (sent === 0) {
-      toast.warn(`No ${label.toLowerCase()} reminders sent (no valid emails found)`);
-    } else {
-      toast.success(
-        `${label} reminders sent to ${sent} borrower${sent !== 1 ? "s" : ""}`
-      );
+      if (sent === 0) {
+        toast.warn(`No ${label.toLowerCase()} reminders sent (no valid emails found)`);
+      } else {
+        toast.success(`${label} reminders sent to ${sent} borrower${sent !== 1 ? "s" : ""}`);
+      }
+
+      setTimeout(() => setSentType(null), 3000);
+    } catch (err: any) {
+      toast.error(err?.data?.message ?? "Failed to send reminders");
+    } finally {
+      setIsSending(false);
     }
-
-    setTimeout(() => setSentType(null), 3000);
-  } catch (err: any) {
-    toast.error(err?.data?.message ?? "Failed to send reminders");
-  }
-};
+  };
 
   const handleSaveSettings = async () => {
     try {
@@ -216,11 +190,7 @@ export default function RemindersPage() {
   return (
     <div className="space-y-6">
       {preview && (
-        <EmailPreviewModal
-          type={preview}
-          settings={settings}
-          onClose={() => setPreview(null)}
-        />
+        <EmailPreviewModal type={preview} settings={settings} onClose={() => setPreview(null)} />
       )}
 
       <div>
@@ -232,6 +202,7 @@ export default function RemindersPage() {
 
       {/* Quick-send cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
         {/* Upcoming */}
         <div className="bg-gray-900 border border-white/5 rounded-2xl p-5 space-y-3">
           <div className="flex items-center justify-between">
@@ -247,7 +218,6 @@ export default function RemindersPage() {
             <button
               onClick={() => setPreview("upcoming")}
               className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-[10px] font-medium transition-colors"
-              title="Preview email"
             >
               <FaEye size={10} /> Preview
             </button>
@@ -258,7 +228,7 @@ export default function RemindersPage() {
           </p>
           <button
             onClick={() => handleSend("upcoming")}
-            disabled={sending || upcomingCount === 0}
+            disabled={sending || isSending || upcomingCount === 0}
             className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all"
           >
             {sending && sentType === "upcoming" ? (
@@ -286,7 +256,6 @@ export default function RemindersPage() {
             <button
               onClick={() => setPreview("overdue")}
               className="flex items-center gap-1.5 text-gray-500 hover:text-gray-300 text-[10px] font-medium transition-colors"
-              title="Preview email"
             >
               <FaEye size={10} /> Preview
             </button>
@@ -297,7 +266,7 @@ export default function RemindersPage() {
           </p>
           <button
             onClick={() => handleSend("overdue")}
-            disabled={sending || overdueCount === 0}
+            disabled={sending || isSending || overdueCount === 0}
             className="w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all"
           >
             {sending && sentType === "overdue" ? (
@@ -322,9 +291,10 @@ export default function RemindersPage() {
           )}
         </div>
         <div className="p-5 space-y-5">
-          {/* Channels */}
+
+          {/* Email channel toggle */}
           <div>
-            <label className={labelCls}>Notification Channels</label>
+            <label className={labelCls}>Notification Channel</label>
             <div className="flex gap-3">
               <button
                 onClick={() => setSetting("emailEnabled", !settings.emailEnabled)}
@@ -337,18 +307,6 @@ export default function RemindersPage() {
                 <FaEnvelope size={11} />
                 Email
                 {settings.emailEnabled && <FaCheck size={9} className="ml-1 text-blue-400" />}
-              </button>
-              <button
-                onClick={() => setSetting("smsEnabled", !settings.smsEnabled)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold transition-all ${
-                  settings.smsEnabled
-                    ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-300"
-                    : "bg-gray-800 border-white/5 text-gray-500"
-                }`}
-              >
-                <FaSms size={11} />
-                SMS
-                {settings.smsEnabled && <FaCheck size={9} className="ml-1 text-emerald-400" />}
               </button>
             </div>
           </div>
