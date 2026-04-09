@@ -56,7 +56,6 @@ const createRecord = async (data: CreateBorrowRecordInput, adminId: string) => {
     },
   });
 
-  // ── Log activity ──
   const admin = await prisma.user.findUnique({
     where:  { id: adminId },
     select: { name: true, username: true },
@@ -155,7 +154,6 @@ const updateRecord = async (id: string, data: UpdateBorrowRecordInput, adminId?:
     include: { item: { select: { id: true, name: true, category: true } } },
   });
 
-  // ── Log activity ──
   if (adminId) {
     const admin = await prisma.user.findUnique({
       where:  { id: adminId },
@@ -186,6 +184,19 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
     throw new AppError(StatusCodes.BAD_REQUEST, "Item has already been returned");
   }
 
+  const hasDamage = !!(data.damageNotes && data.damageNotes.trim().length > 0);
+
+  // ── Flag item as damaged — does NOT touch totalQuantity ───────────────────
+  if (hasDamage && record.item) {
+    await prisma.item.update({
+      where: { id: record.item.id },
+      data:  {
+        isDamaged:   true,
+        damageNotes: data.damageNotes!.trim(),
+      },
+    });
+  }
+
   const updated = await prisma.borrowRecord.update({
     where: { id },
     data: {
@@ -201,16 +212,29 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
     },
   });
 
-  // ── Log activity ──
+  // ── Standard return log ───────────────────────────────────────────────────
   await activityLogService.createLog({
     action:     "RETURNED",
     entityType: "BorrowRecord",
     entityId:   updated.id,
     entityName: updated.borrowerName,
-    details:    `Returned "${updated.item?.name}"`,
+    details:    `Returned "${updated.item?.name}"${hasDamage ? " — with damage reported" : ""}`,
     adminId:    updated.processedById ?? undefined,
     adminName:  updated.processedBy?.name || updated.processedBy?.username,
   });
+
+  // ── Damage flag log ───────────────────────────────────────────────────────
+  if (hasDamage) {
+    await activityLogService.createLog({
+      action:     "UPDATED",
+      entityType: "Item",
+      entityId:   record.item?.id,
+      entityName: record.item?.name,
+      details:    `⚠️ DAMAGE REPORTED — "${record.item?.name}" returned damaged by ${updated.borrowerName}. Notes: ${data.damageNotes}`,
+      adminId:    updated.processedById ?? undefined,
+      adminName:  updated.processedBy?.name || updated.processedBy?.username,
+    });
+  }
 
   return updated;
 };
@@ -232,7 +256,6 @@ const bulkReturn = async (ids: string[], adminId?: string) => {
     data:  { status: "RETURNED", actualReturnDate: new Date() },
   });
 
-  // ── Log activity ──
   if (adminId) {
     const admin = await prisma.user.findUnique({
       where:  { id: adminId },
@@ -268,7 +291,6 @@ const bulkDelete = async (ids: string[], adminId?: string) => {
     data:  { isDeleted: true, deletedAt: new Date() },
   });
 
-  // ── Log activity ──
   if (adminId) {
     const admin = await prisma.user.findUnique({
       where:  { id: adminId },
@@ -295,7 +317,6 @@ const deleteRecord = async (id: string, adminId?: string) => {
   });
   if (!record) throw new AppError(StatusCodes.NOT_FOUND, "Borrow record not found");
 
-  // ── Log activity ──
   if (adminId) {
     const admin = await prisma.user.findUnique({
       where:  { id: adminId },
@@ -366,6 +387,7 @@ const getStats = async () => {
     allActiveOverdue,
     departmentRaw,
     uniqueBorrowersRaw,
+    damagedItemsCount,
   ] = await Promise.all([
     prisma.item.count({ where: { isDeleted: false } }),
     prisma.borrowRecord.count({ where: { status: "ACTIVE",   isDeleted: false } }),
@@ -413,6 +435,8 @@ const getStats = async () => {
       by:    ["borrowerName"],
       where: { isDeleted: false },
     }),
+    // ── Damaged items count ──
+    prisma.item.count({ where: { isDeleted: false, isDamaged: true } }),
   ]);
 
   // ── Resolve top item names ──
@@ -552,6 +576,7 @@ const getStats = async () => {
     monthlyBorrows,
     monthlyOverdue,
     borrowsByCategory,
+    damagedItemsCount,
   };
 };
 
@@ -561,13 +586,13 @@ const getBorrowers = async () => {
 
   const records = await prisma.borrowRecord.findMany({
     where: { isDeleted: false },
-    select: { 
-      borrowerName: true, 
-      borrowerDepartment: true, 
-      borrowerEmail: true,
-      status: true,
-      borrowDate: true,
-    }
+    select: {
+      borrowerName:       true,
+      borrowerDepartment: true,
+      borrowerEmail:      true,
+      status:             true,
+      borrowDate:         true,
+    },
   });
 
   const borrowersMap: Record<string, any> = {};
@@ -576,22 +601,22 @@ const getBorrowers = async () => {
     const name = r.borrowerName;
     if (!borrowersMap[name]) {
       borrowersMap[name] = {
-        name: r.borrowerName,
-        department: r.borrowerDepartment || "Unknown",
-        email: r.borrowerEmail || "",
-        totalBorrows: 0,
-        activeBorrows: 0,
-        overdueBorrows: 0,
+        name:            r.borrowerName,
+        department:      r.borrowerDepartment || "Unknown",
+        email:           r.borrowerEmail || "",
+        totalBorrows:    0,
+        activeBorrows:   0,
+        overdueBorrows:  0,
         returnedBorrows: 0,
-        lastBorrowDate: r.borrowDate
+        lastBorrowDate:  r.borrowDate,
       };
     }
     const b = borrowersMap[name];
     b.totalBorrows++;
-    if (r.status === "ACTIVE") b.activeBorrows++;
-    else if (r.status === "OVERDUE") b.overdueBorrows++;
+    if      (r.status === "ACTIVE")   b.activeBorrows++;
+    else if (r.status === "OVERDUE")  b.overdueBorrows++;
     else if (r.status === "RETURNED") b.returnedBorrows++;
-    
+
     if (new Date(r.borrowDate) > new Date(b.lastBorrowDate)) {
       b.lastBorrowDate = r.borrowDate;
     }
@@ -599,7 +624,7 @@ const getBorrowers = async () => {
     if (!b.email && r.borrowerEmail) b.email = r.borrowerEmail;
   });
 
-  return Object.values(borrowersMap).sort((a, b) => 
+  return Object.values(borrowersMap).sort((a, b) =>
     new Date(b.lastBorrowDate).getTime() - new Date(a.lastBorrowDate).getTime()
   );
 };

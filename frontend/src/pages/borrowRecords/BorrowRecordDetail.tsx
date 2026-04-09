@@ -115,13 +115,14 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
   );
 }
 
-// ── Return Modal ──────────────────────────────────────────────────────────────
 function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () => void }) {
   const sigRef = useRef<SignatureCanvas>(null);
   const [returnRecord, { isLoading }] = useReturnBorrowRecordMutation();
   const [conditionOnReturn, setCondition] = useState("");
   const [damageNotes,       setDamage]    = useState("");
   const [sigDone,           setSigDone]   = useState(false);
+
+  const hasDamage = damageNotes.trim().length > 0;
 
   const handleReturn = async () => {
     if (!sigRef.current || sigRef.current.isEmpty()) {
@@ -131,7 +132,11 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
     const returnSignature = getSignatureData(sigRef);
     try {
       await returnRecord({ id: record.id, conditionOnReturn, damageNotes, returnSignature }).unwrap();
-      toast.success("Return processed successfully!");
+      toast.success(
+        hasDamage
+          ? "Return processed — damage flagged and inventory updated."
+          : "Return processed successfully!"
+      );
       onClose();
     } catch (err: any) {
       toast.error(err?.data?.message ?? "Failed to process return");
@@ -161,8 +166,28 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Damage Notes</label>
             <textarea rows={2} value={damageNotes} onChange={e => setDamage(e.target.value)}
               placeholder="Describe any damage (leave blank if none)"
-              className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+              className={`w-full px-4 py-2.5 bg-gray-800 border rounded-xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-2 transition-all ${
+                hasDamage
+                  ? "border-red-500/30 focus:ring-red-500/20"
+                  : "border-white/8 focus:ring-emerald-500/30"
+              }`} />
           </div>
+
+          {/* Damage warning banner */}
+          {hasDamage && (
+            <div className="flex items-start gap-2 px-3.5 py-3 bg-red-500/8 border border-red-500/20 rounded-xl">
+              <FaExclamationTriangle size={11} className="text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-300 text-xs font-semibold">Damage detected</p>
+                <p className="text-red-300/70 text-xs mt-0.5 leading-relaxed">
+                  A damage report will be flagged in the activity log and{" "}
+                  <strong className="text-red-300">{record.quantityBorrowed} unit{record.quantityBorrowed !== 1 ? "s" : ""}</strong> will be
+                  deducted from <strong className="text-red-300">{record.item?.name}</strong>'s inventory.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Return Signature *</label>
@@ -188,8 +213,12 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
               Cancel
             </button>
             <button onClick={handleReturn} disabled={isLoading || !sigDone}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all">
-              {isLoading ? "Processing..." : "Confirm Return"}
+              className={`flex-1 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all ${
+                hasDamage
+                  ? "bg-red-600 hover:bg-red-500"
+                  : "bg-blue-600 hover:bg-blue-500"
+              }`}>
+              {isLoading ? "Processing..." : hasDamage ? "Confirm & Flag Damage" : "Confirm Return"}
             </button>
           </div>
         </div>
@@ -197,7 +226,6 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
     </div>
   );
 }
-
 // ── Print Slip ────────────────────────────────────────────────────────────────
 const printSlip = (record: BorrowRecord) => {
   const borrowSigDisplay = signatureToDisplay(record.borrowSignature);

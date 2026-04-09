@@ -53,4 +53,13 @@ const deleteItem = async (req: Request, res: Response) => {
   }
 };
 
-export const itemsController = { createItem, getItems, getSingleItem, updateItem, deleteItem };
+const markRepaired = async (req: Request, res: Response) => {
+  try {
+    const result = await itemsService.markRepaired(req.params.id);
+    sendResponse(res, { statusCode: StatusCodes.OK, success: true, message: "Item marked as repaired", data: result });
+  } catch (err: any) {
+    sendResponse(res, { statusCode: err.statusCode ?? 400, success: false, message: err.message, data: null });
+  }
+};
+
+export const itemsController = { createItem, getItems, getSingleItem, updateItem, deleteItem, markRepaired, };

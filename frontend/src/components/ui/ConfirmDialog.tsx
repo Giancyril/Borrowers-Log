@@ -43,17 +43,17 @@ export default function ConfirmDialog({
     danger:  {
       icon:    <FaTrash size={18} className="text-red-400" />,
       iconBg:  "bg-red-500/10 border-red-500/20",
-      confirm: "bg-red-600 hover:bg-red-500 shadow-red-900/30",
+      confirm: "bg-red-600 hover:bg-red-500",
     },
     warning: {
       icon:    <FaExclamationTriangle size={18} className="text-amber-400" />,
       iconBg:  "bg-amber-500/10 border-amber-500/20",
-      confirm: "bg-amber-600 hover:bg-amber-500 shadow-amber-900/30",
+      confirm: "bg-amber-600 hover:bg-amber-500",
     },
     info: {
       icon:    <FaCheck size={18} className="text-blue-400" />,
       iconBg:  "bg-blue-500/10 border-blue-500/20",
-      confirm: "bg-blue-600 hover:bg-blue-500 shadow-blue-900/30",
+      confirm: "bg-blue-600 hover:bg-blue-500",
     },
   };
 
@@ -90,7 +90,7 @@ export default function ConfirmDialog({
             {cancelText}
           </button>
           <button onClick={() => { onConfirm(); }}
-            className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-all shadow-lg ${v.confirm}`}>
+            className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-all ${v.confirm}`}>
             {confirmText}
           </button>
         </div>

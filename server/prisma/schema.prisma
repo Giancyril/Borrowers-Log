@@ -82,6 +82,8 @@ model Item {
   description    String       @default("")
   totalQuantity  Int
   conditionNotes String       @default("")
+  isDamaged      Boolean      @default(false)
+  damageNotes    String       @default("")
   isDeleted      Boolean      @default(false)
   deletedAt      DateTime?
   createdAt      DateTime     @default(now())

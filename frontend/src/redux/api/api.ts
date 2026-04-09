@@ -53,6 +53,10 @@ const api = baseApi.injectEndpoints({
       query: (id: string) => ({ url: `/items/${id}`, method: "DELETE" }),
       invalidatesTags: ["items", "stats"],
     }),
+        markItemRepaired: build.mutation({
+      query: (id: string) => ({ url: `/items/${id}/repair`, method: "PUT" }),
+      invalidatesTags: ["items", "stats"],
+    }),
 
     // ── Borrow Records ────────────────────────────────────────────────────
     getBorrowRecords: build.query({
@@ -232,4 +236,5 @@ export const {
   useCreateBorrowTemplateMutation,
   useUpdateBorrowTemplateMutation,
   useDeleteBorrowTemplateMutation,
+  useMarkItemRepairedMutation,
 } = api;

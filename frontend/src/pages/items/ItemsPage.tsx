@@ -2,11 +2,12 @@ import { useState } from "react";
 import {
   useGetItemsQuery, useCreateItemMutation,
   useUpdateItemMutation, useDeleteItemMutation,
+  useMarkItemRepairedMutation,
 } from "../../redux/api/api";
 import { toast } from "react-toastify";
 import {
   FaPlus, FaEdit, FaTrash, FaBoxOpen, FaTimes,
-  FaSearch, FaExclamationTriangle,
+  FaSearch, FaExclamationTriangle, FaTools,
 } from "react-icons/fa";
 import type { Item, ItemCategory } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
@@ -23,7 +24,10 @@ const CAT_COLOR: Record<ItemCategory, string> = {
   OTHER:           "bg-gray-500/10 text-gray-400 border-gray-500/20",
 };
 
-const emptyForm = { name: "", category: "EQUIPMENT" as ItemCategory, description: "", totalQuantity: 1, conditionNotes: "" };
+const emptyForm = {
+  name: "", category: "EQUIPMENT" as ItemCategory,
+  description: "", totalQuantity: 1, conditionNotes: "",
+};
 
 function ItemModal({ item, onClose }: { item?: Item; onClose: () => void }) {
   const [createItem, { isLoading: creating }] = useCreateItemMutation();
@@ -38,7 +42,7 @@ function ItemModal({ item, onClose }: { item?: Item; onClose: () => void }) {
     e.preventDefault();
     try {
       if (item) { await updateItem({ id: item.id, ...form }).unwrap(); toast.success("Item updated"); }
-      else { await createItem(form).unwrap(); toast.success("Item created"); }
+      else       { await createItem(form).unwrap();                    toast.success("Item created"); }
       onClose();
     } catch (err: any) { toast.error(err?.data?.message ?? "Failed to save item"); }
   };
@@ -110,39 +114,40 @@ export default function ItemsPage() {
   const [modal,    setModal]    = useState<"create" | Item | null>(null);
   const { confirm, isOpen, options, handleConfirm, handleCancel } = useConfirm();
 
-  const { data, isLoading } = useGetItemsQuery({ search, category, page, limit: 12 });
-  const [deleteItem] = useDeleteItemMutation();
+  const { data, isLoading }  = useGetItemsQuery({ search, category, page, limit: 12 });
+  const [deleteItem]         = useDeleteItemMutation();
+  const [markRepaired]       = useMarkItemRepairedMutation();
 
   const items = (data?.data ?? []) as Item[];
   const meta  = data?.meta;
 
-  const outOfStock = items.filter(i => i.availableQuantity === 0).length;
-  const lowStock   = items.filter(i => i.availableQuantity > 0 && i.availableQuantity <= 2).length;
-
   const handleDelete = async (item: Item) => {
     const ok = await confirm({
-      title:       "Delete Item",
-      message:     `Delete "${item.name}" from inventory? This cannot be undone.`,
-      confirmText: "Delete",
-      variant:     "danger",
+      title: "Delete Item", message: `Delete "${item.name}" from inventory? This cannot be undone.`,
+      confirmText: "Delete", variant: "danger",
     });
     if (!ok) return;
     try { await deleteItem(item.id).unwrap(); toast.success("Item deleted"); }
     catch (err: any) { toast.error(err?.data?.message ?? "Failed to delete"); }
   };
 
+  const handleMarkRepaired = async (item: Item) => {
+    const ok = await confirm({
+      title:       "Mark as Repaired",
+      message:     `Mark "${item.name}" as repaired? This will clear the damage flag and make it available for borrowing again.`,
+      confirmText: "Mark Repaired",
+      variant:     "info",
+    });
+    if (!ok) return;
+    try { await markRepaired(item.id).unwrap(); toast.success(`"${item.name}" marked as repaired`); }
+    catch (err: any) { toast.error(err?.data?.message ?? "Failed to mark repaired"); }
+  };
+
   return (
     <div className="space-y-5">
-      <ConfirmDialog
-        isOpen={isOpen}
-        title={options.title}
-        message={options.message}
-        confirmText={options.confirmText}
-        cancelText={options.cancelText}
-        variant={options.variant}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
+      <ConfirmDialog isOpen={isOpen} title={options.title} message={options.message}
+        confirmText={options.confirmText} cancelText={options.cancelText}
+        variant={options.variant} onConfirm={handleConfirm} onCancel={handleCancel} />
 
       {modal && <ItemModal item={modal === "create" ? undefined : modal} onClose={() => setModal(null)} />}
 
@@ -198,12 +203,23 @@ export default function ItemsPage() {
         ) : (
           <div className="divide-y divide-white/[0.04]">
             {items.map(item => (
-              <div key={item.id} className="group">
+              <div key={item.id} className={`group ${item.isDamaged ? "bg-red-500/[0.03]" : ""}`}>
+
                 {/* Desktop */}
                 <div className="hidden sm:grid grid-cols-12 gap-4 items-center px-5 py-3.5 hover:bg-white/[0.02] transition-colors">
                   <div className="col-span-4 min-w-0">
-                    <p className="text-white text-sm font-semibold truncate group-hover:text-cyan-400 transition-colors">{item.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-white text-sm font-semibold truncate group-hover:text-cyan-400 transition-colors">{item.name}</p>
+                      {item.isDamaged && (
+                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/15 border border-red-500/25 text-red-400 text-[9px] font-bold rounded-full shrink-0">
+                          <FaExclamationTriangle size={7} /> DAMAGED
+                        </span>
+                      )}
+                    </div>
                     {item.description && <p className="text-gray-500 text-xs truncate mt-0.5">{item.description}</p>}
+                    {item.isDamaged && item.damageNotes && (
+                      <p className="text-red-400/70 text-[10px] truncate mt-0.5 italic">{item.damageNotes}</p>
+                    )}
                   </div>
                   <div className="col-span-2">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${CAT_COLOR[item.category]}`}>
@@ -214,24 +230,34 @@ export default function ItemsPage() {
                   <div className="col-span-2 text-center">
                     <div className="flex items-center justify-center gap-1.5">
                       <span className={`text-sm font-bold ${
+                        item.isDamaged            ? "text-red-400" :
                         item.availableQuantity === 0 ? "text-red-400" :
                         item.availableQuantity <= 2  ? "text-amber-400" : "text-emerald-400"
                       }`}>
                         {item.availableQuantity}
                       </span>
-                      {item.availableQuantity === 0 && (
+                      {item.isDamaged ? (
+                        <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-bold rounded-full">
+                          DMG
+                        </span>
+                      ) : item.availableQuantity === 0 ? (
                         <span className="px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] font-bold rounded-full">
                           OUT
                         </span>
-                      )}
-                      {item.availableQuantity > 0 && item.availableQuantity <= 2 && (
+                      ) : item.availableQuantity <= 2 ? (
                         <span className="px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-bold rounded-full">
                           LOW
                         </span>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                   <div className="col-span-2 flex items-center justify-end gap-1.5">
+                    {item.isDamaged && (
+                      <button onClick={() => handleMarkRepaired(item)} title="Mark as repaired"
+                        className="w-7 h-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 flex items-center justify-center text-emerald-400 transition-colors">
+                        <FaTools size={10} />
+                      </button>
+                    )}
                     <button onClick={() => setModal(item)}
                       className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 flex items-center justify-center text-blue-400 transition-colors">
                       <FaEdit size={11} />
@@ -247,12 +273,28 @@ export default function ItemsPage() {
                 <div className="sm:hidden p-4 hover:bg-white/[0.02] transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-semibold">{item.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-white text-sm font-semibold">{item.name}</p>
+                        {item.isDamaged && (
+                          <span className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500/15 border border-red-500/25 text-red-400 text-[9px] font-bold rounded-full">
+                            <FaExclamationTriangle size={7} /> DAMAGED
+                          </span>
+                        )}
+                      </div>
                       <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${CAT_COLOR[item.category]}`}>
                         {CAT_LABEL[item.category]}
                       </span>
+                      {item.isDamaged && item.damageNotes && (
+                        <p className="text-red-400/70 text-[10px] mt-1 italic">{item.damageNotes}</p>
+                      )}
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 shrink-0">
+                      {item.isDamaged && (
+                        <button onClick={() => handleMarkRepaired(item)}
+                          className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+                          <FaTools size={10} />
+                        </button>
+                      )}
                       <button onClick={() => setModal(item)} className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
                         <FaEdit size={11} />
                       </button>
@@ -264,14 +306,17 @@ export default function ItemsPage() {
                   <div className="flex gap-4 mt-2 text-xs text-gray-500">
                     <span>Total: <strong className="text-white">{item.totalQuantity}</strong></span>
                     <span>Available: <strong className={
+                      item.isDamaged               ? "text-red-400" :
                       item.availableQuantity === 0 ? "text-red-400" :
                       item.availableQuantity <= 2  ? "text-amber-400" : "text-emerald-400"
                     }>{item.availableQuantity}</strong>
-                    {item.availableQuantity === 0 && <span className="ml-1 text-red-400 text-[9px] font-bold">OUT</span>}
-                    {item.availableQuantity > 0 && item.availableQuantity <= 2 && <span className="ml-1 text-amber-400 text-[9px] font-bold">LOW</span>}
+                    {item.isDamaged && <span className="ml-1 text-red-400 text-[9px] font-bold">DMG</span>}
+                    {!item.isDamaged && item.availableQuantity === 0 && <span className="ml-1 text-red-400 text-[9px] font-bold">OUT</span>}
+                    {!item.isDamaged && item.availableQuantity > 0 && item.availableQuantity <= 2 && <span className="ml-1 text-amber-400 text-[9px] font-bold">LOW</span>}
                     </span>
                   </div>
                 </div>
+
               </div>
             ))}
           </div>

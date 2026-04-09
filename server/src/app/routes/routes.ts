@@ -28,6 +28,7 @@ router.get   ("/items/:id", auth(), itemsController.getSingleItem);
 router.post  ("/items",     auth(), itemsController.createItem);
 router.put   ("/items/:id", auth(), itemsController.updateItem);
 router.delete("/items/:id", auth(), itemsController.deleteItem);
+router.put("/items/:id/repair", auth(), itemsController.markRepaired);
 
 // ── Borrow Records ────────────────────────────────────────────────────────────
 // Static routes MUST come before /:id

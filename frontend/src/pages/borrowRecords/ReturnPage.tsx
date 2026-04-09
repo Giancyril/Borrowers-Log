@@ -197,16 +197,33 @@ export default function ReturnPage() {
             />
           </div>
 
-          <div>
-            <label className={labelCls}>Damage Notes</label>
-            <textarea
-              rows={3}
-              value={damageNotes}
-              onChange={(e) => setDamage(e.target.value)}
-              placeholder="Describe any damage in detail (leave blank if none)"
-              className={`${inputCls} resize-none`}
-            />
-          </div>
+          {/* Damage Notes — replace existing */}
+<div>
+  <label className={labelCls}>Damage Notes</label>
+  <textarea
+    rows={3}
+    value={damageNotes}
+    onChange={(e) => setDamage(e.target.value)}
+    placeholder="Describe any damage in detail (leave blank if none)"
+    className={`${inputCls} resize-none ${
+      damageNotes.trim() ? "border-red-500/30 focus:ring-red-500/20" : ""
+    }`}
+  />
+  {/* Damage warning */}
+  {damageNotes.trim() && record && (
+    <div className="flex items-start gap-2 mt-2 px-3.5 py-3 bg-red-500/8 border border-red-500/20 rounded-xl">
+      <FaExclamationTriangle size={11} className="text-red-400 shrink-0 mt-0.5" />
+      <div>
+        <p className="text-red-300 text-xs font-semibold">Damage detected</p>
+        <p className="text-red-300/70 text-xs mt-0.5 leading-relaxed">
+          A damage report will be flagged in the activity log and{" "}
+          <strong className="text-red-300">{record.quantityBorrowed} unit{record.quantityBorrowed !== 1 ? "s" : ""}</strong> will
+          be deducted from <strong className="text-red-300">{record.item?.name}</strong>'s inventory.
+        </p>
+      </div>
+    </div>
+  )}
+</div>
 
           {/* Signature */}
           <div>
@@ -245,12 +262,20 @@ export default function ReturnPage() {
           Cancel
         </Link>
         <button
-          onClick={handleReturn}
-          disabled={submitting || !sigDone}
-          className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
-        >
-          {submitting ? "Processing..." : "Confirm Return"}
-        </button>
+  onClick={handleReturn}
+  disabled={submitting || !sigDone}
+  className={`flex-1 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all ${
+    damageNotes.trim()
+      ? "bg-red-600 hover:bg-red-500"
+      : "bg-emerald-600 hover:bg-emerald-500"
+  }`}
+>
+  {submitting
+    ? "Processing..."
+    : damageNotes.trim()
+    ? "Confirm & Flag Damage"
+    : "Confirm Return"}
+</button>
       </div>
     </div>
   );

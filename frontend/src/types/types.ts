@@ -9,6 +9,8 @@ export interface Item {
   totalQuantity: number;
   availableQuantity: number;
   conditionNotes: string;
+  isDamaged:boolean;     
+  damageNotes:string;
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
