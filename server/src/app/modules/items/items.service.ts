@@ -56,7 +56,16 @@ const getSingleItem = async (id: string) => {
 const updateItem = async (id: string, data: UpdateItemInput) => {
   const exists = await prisma.item.findFirst({ where: { id, isDeleted: false } });
   if (!exists) throw new AppError(StatusCodes.NOT_FOUND, "Item not found");
-  return prisma.item.update({ where: { id }, data });
+  return prisma.item.update({
+    where: { id },
+    data: {
+      ...(data.name           !== undefined && { name:           data.name }),
+      ...(data.category       !== undefined && { category:       data.category }),
+      ...(data.description    !== undefined && { description:    data.description }),
+      ...(data.totalQuantity  !== undefined && { totalQuantity:  data.totalQuantity }),
+      ...(data.conditionNotes !== undefined && { conditionNotes: data.conditionNotes }),
+    },
+  });
 };
 
 // ── Mark item as repaired — clears damage flag ────────────────────────────────
