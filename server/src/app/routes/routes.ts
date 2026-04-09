@@ -6,6 +6,7 @@ import { borrowRequestsController } from "../modules/borrowRequests/borrowReques
 import auth                        from "../middlewares/auth";
 import { activityLogController } from "../modules/activityLog/activityLog.controller";
 import { remindersController } from "../modules/reminders/reminders.controller";
+import { borrowTemplatesController } from "../modules/borrowTemplates/borrowTemplates.controller";
 const router = Router();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -53,6 +54,12 @@ router.delete("/borrow-records/:id",      auth(), borrowRecordsController.delete
 
 router.get("/activity-logs", auth(), activityLogController.getLogs);
 router.delete("/activity-logs", auth, activityLogController.clearAll);
+
+// ── Borrow Templates ──────────────────────────────────────────────────────────
+router.get   ("/borrow-templates",     auth(), borrowTemplatesController.getTemplates);
+router.post  ("/borrow-templates",     auth(), borrowTemplatesController.createTemplate);
+router.put   ("/borrow-templates/:id", auth(), borrowTemplatesController.updateTemplate);
+router.delete("/borrow-templates/:id", auth(), borrowTemplatesController.deleteTemplate);
 
 // ── Borrow Requests ─────────────────────────────────────────
 router.get("/borrow-requests", auth(), borrowRequestsController.getRequests);

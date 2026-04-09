@@ -21,6 +21,7 @@ export const baseApi = createApi({
     "activityLogs",
     "borrowRequests",
     "reminderSettings",
+    "borrowTemplates",
   ],
   endpoints: () => ({}),
 });

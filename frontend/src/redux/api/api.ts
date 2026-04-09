@@ -165,6 +165,24 @@ const api = baseApi.injectEndpoints({
       invalidatesTags: ["activityLogs"],
     }),
 
+    // ── Borrow Templates ──────────────────────────────────────────────────────────
+    getBorrowTemplates: build.query({
+      query: () => "/borrow-templates",
+      providesTags: ["borrowTemplates"],
+    }),
+    createBorrowTemplate: build.mutation({
+      query: (body) => ({ url: "/borrow-templates", method: "POST", body }),
+      invalidatesTags: ["borrowTemplates"],
+    }),
+    updateBorrowTemplate: build.mutation({
+      query: ({ id, ...body }) => ({ url: `/borrow-templates/${id}`, method: "PUT", body }),
+      invalidatesTags: ["borrowTemplates"],
+    }),
+    deleteBorrowTemplate: build.mutation({
+      query: (id: string) => ({ url: `/borrow-templates/${id}`, method: "DELETE" }),
+      invalidatesTags: ["borrowTemplates"],
+    }),
+
     // ── Notifications (polls activity-logs, last 15, every 30s) ──────────
     getNotifications: build.query({
       query: () => ({ url: "/activity-logs", params: { limit: 15, page: 1 } }),
@@ -210,4 +228,8 @@ export const {
   useGetActivityLogsQuery,
   useClearActivityLogsMutation,
   useGetNotificationsQuery,
+  useGetBorrowTemplatesQuery,
+  useCreateBorrowTemplateMutation,
+  useUpdateBorrowTemplateMutation,
+  useDeleteBorrowTemplateMutation,
 } = api;

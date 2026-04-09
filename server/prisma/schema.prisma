@@ -69,7 +69,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  approvedRequests BorrowRecord[] @relation("ProcessedBy")
+  approvedRequests BorrowRecord[]   @relation("ProcessedBy")
+  borrowTemplates  BorrowTemplate[]
 
   @@map("users")
 }
@@ -177,4 +178,21 @@ model ReminderSettings {
   emailSubjectPrefix String  @default("[Reminder]")
 
   @@map("reminder_settings")
+}
+
+model BorrowTemplate {
+  id                 String   @id @default(uuid())
+  name               String
+  borrowerName       String   @default("")
+  borrowerEmail      String   @default("")
+  borrowerDepartment String   @default("")
+  purpose            String   @default("")
+  conditionOnBorrow  String   @default("")
+  dueOffsetDays      Int      @default(7)
+  createdById        String
+  createdBy          User     @relation(fields: [createdById], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("borrow_templates")
 }

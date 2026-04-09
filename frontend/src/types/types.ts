@@ -104,3 +104,17 @@ export interface ActivityLog {
   adminName: string | null;
   createdAt: string;
 }
+
+export interface BorrowTemplate {
+  id:                 string;
+  name:               string;
+  borrowerName:       string;
+  borrowerEmail:      string;
+  borrowerDepartment: string;
+  purpose:            string;
+  conditionOnBorrow:  string;
+  dueOffsetDays:      number;
+  createdById:        string;
+  createdAt:          string;
+  updatedAt:          string;
+}
