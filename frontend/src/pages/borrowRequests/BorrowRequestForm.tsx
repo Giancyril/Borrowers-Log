@@ -3,11 +3,11 @@ import {
   useGetItemsQuery, 
   useCreateBorrowRequestMutation,
   useGetStudentByDetailsQuery,
-  useGetStudentByIdQuery
 } from "../../redux/api/api";
 import { toast } from "react-toastify";
-import { FaCheckCircle, FaBoxOpen, FaSearch, FaSpinner, FaChevronDown } from "react-icons/fa";
+import { FaCheckCircle, FaBoxOpen, FaSearch, FaSpinner } from "react-icons/fa";
 import { Select } from "../../components/ui/Select";
+import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
 import type { Item } from "../../types/types";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -45,7 +45,7 @@ export default function BorrowRequestForm() {
     { skip: !shouldFetchByDetails || !form.borrowerName || !form.borrowerEmail }
   );
 
-  const handleFetchDetails = async () => {
+  const handleFetchDetails = () => {
     if (!form.borrowerName || !form.borrowerEmail) {
       toast.warn("Please enter both Name and Email to fetch info.");
       return;
@@ -80,10 +80,7 @@ export default function BorrowRequestForm() {
     if (!form.neededUntil) e.neededUntil = "Required";
     else if (new Date(form.neededUntil) < new Date(form.requestedDate))
       e.neededUntil = "Must be on or after the request date";
-    if (
-      selectedItem &&
-      form.quantityRequested > selectedItem.availableQuantity
-    )
+    if (selectedItem && form.quantityRequested > selectedItem.availableQuantity)
       e.quantityRequested = `Only ${selectedItem.availableQuantity} available`;
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -140,7 +137,7 @@ export default function BorrowRequestForm() {
                 notes: "",
               });
             }}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-all"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-2xl transition-all"
           >
             Submit Another Request
           </button>
@@ -154,7 +151,7 @@ export default function BorrowRequestForm() {
       <div className="w-full max-w-lg">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
             <FaBoxOpen size={16} className="text-blue-400" />
           </div>
           <div>
@@ -276,23 +273,13 @@ export default function BorrowRequestForm() {
                 <p className="text-red-400 text-xs mt-1">{errors.quantityRequested}</p>
               )}
             </div>
-            <div>
+            <div className="flex-1">
               <label className={labelCls}>Request Date</label>
-              <input
-                type="date"
-                value={form.requestedDate}
-                onChange={(e) => set("requestedDate", e.target.value)}
-                className={inputCls}
-              />
+              <CustomDatePicker value={form.requestedDate} onChange={v => set("requestedDate", v)} />
             </div>
-            <div>
+            <div className="flex-1">
               <label className={labelCls}>Needed Until *</label>
-              <input
-                type="date"
-                value={form.neededUntil}
-                onChange={(e) => set("neededUntil", e.target.value)}
-                className={inputCls}
-              />
+              <CustomDatePicker value={form.neededUntil} onChange={v => set("neededUntil", v)} />
               {errors.neededUntil && (
                 <p className="text-red-400 text-xs mt-1">{errors.neededUntil}</p>
               )}
@@ -320,9 +307,9 @@ export default function BorrowRequestForm() {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-2xl transition-all"
           >
-            {isLoading ? "Submitting..." : "Submit Request"}
+            {isLoading ? "Sending Request..." : "Submit Borrow Request"}
           </button>
         </div>
       </div>

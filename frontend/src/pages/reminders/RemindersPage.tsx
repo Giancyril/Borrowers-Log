@@ -229,7 +229,7 @@ export default function RemindersPage() {
           <button
             onClick={() => handleSend("upcoming")}
             disabled={sending || isSending || upcomingCount === 0}
-            className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-2xl transition-all"
           >
             {sending && sentType === "upcoming" ? (
               <><FaSpinner className="animate-spin" size={11} /> Sending...</>
@@ -267,7 +267,7 @@ export default function RemindersPage() {
           <button
             onClick={() => handleSend("overdue")}
             disabled={sending || isSending || overdueCount === 0}
-            className="w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold rounded-2xl transition-all"
           >
             {sending && sentType === "overdue" ? (
               <><FaSpinner className="animate-spin" size={11} /> Sending...</>
@@ -354,7 +354,7 @@ export default function RemindersPage() {
           <button
             onClick={handleSaveSettings}
             disabled={savingSettings || !settingsDirty}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-2xl transition-all"
           >
             {savingSettings ? "Saving..." : "Save Settings"}
           </button>

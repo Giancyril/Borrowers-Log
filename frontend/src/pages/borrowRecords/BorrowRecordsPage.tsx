@@ -10,9 +10,11 @@ import { toast } from "react-toastify";
 import {
   FaPlus, FaSearch, FaTrash, FaEye, FaClipboardList, FaTimes,
   FaCheckSquare, FaSquare, FaUndo, FaDownload, FaUser, FaFilter,
+  FaChevronLeft, FaChevronRight,
 } from "react-icons/fa";
 import type { BorrowRecord, BorrowStatus } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
+import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
 import { useConfirm } from "../../hooks/useConfirm";
 
 const STATUS_TABS = [
@@ -171,15 +173,15 @@ export default function BorrowRecordsPage() {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button onClick={() => exportCSV(records)}
-              className="w-8 h-8 sm:w-auto sm:h-auto inline-flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-xs font-semibold rounded-xl transition-all">
+              className="w-8 h-8 sm:w-auto sm:h-auto inline-flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs font-semibold rounded-2xl transition-all">
               <FaDownload size={11} /> <span className="hidden sm:inline">Export</span>
             </button>
             <button
               onClick={() => setShowFilters(f => !f)}
-              className={`w-8 h-8 sm:w-auto sm:h-auto inline-flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 border text-xs font-semibold rounded-xl transition-all ${
+              className={`w-8 h-8 sm:w-auto sm:h-auto inline-flex items-center justify-center gap-1.5 sm:px-3 sm:py-2 border text-xs font-semibold rounded-2xl transition-all ${
                 showFilters || hasActiveFilters
-                  ? "bg-blue-600/20 border-blue-500/30 text-blue-400"
-                  : "bg-gray-800 hover:bg-gray-700 border-white/5 text-gray-300"
+                  ? "bg-blue-600/20 border-blue-500/40 text-blue-300"
+                  : "bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10"
               }`}>
               <FaFilter size={10} />
               {hasActiveFilters && (
@@ -206,21 +208,17 @@ export default function BorrowRecordsPage() {
             )}
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="flex-1">
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
                 From
               </label>
-              <input type="date" value={dateFrom}
-                onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
+              <CustomDatePicker value={dateFrom} onChange={v => { setDateFrom(v); setPage(1); }} />
             </div>
-            <div>
+            <div className="flex-1">
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
                 To
               </label>
-              <input type="date" value={dateTo}
-                onChange={e => { setDateTo(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
+              <CustomDatePicker value={dateTo} onChange={v => { setDateTo(v); setPage(1); }} />
             </div>
           </div>
         </div>
@@ -409,20 +407,17 @@ export default function BorrowRecordsPage() {
       {meta && meta.totalPage > 1 && (
         <div className="flex items-center justify-center gap-1.5">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            className="px-3 py-1.5 bg-gray-900 border border-white/5 rounded-lg text-gray-400 text-xs disabled:opacity-40 hover:text-white transition-colors">
-            Prev
+            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-2xl disabled:opacity-30 transition-all">
+            <FaChevronLeft size={12} />
           </button>
-          {Array.from({ length: meta.totalPage }, (_, i) => i + 1).map(p => (
-            <button key={p} onClick={() => setPage(p)}
-              className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
-                p === page ? "bg-blue-600 text-white" : "bg-gray-900 border border-white/5 text-gray-400 hover:text-white"
-              }`}>
-              {p}
-            </button>
-          ))}
-          <button onClick={() => setPage(p => Math.min(meta.totalPage, p + 1))} disabled={page === meta.totalPage}
-            className="px-3 py-1.5 bg-gray-900 border border-white/5 rounded-lg text-gray-400 text-xs disabled:opacity-40 hover:text-white transition-colors">
-            Next
+          <div className="flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/10 rounded-2xl">
+            <span className="text-xs font-bold text-blue-400">{page}</span>
+            <span className="text-gray-600 text-[10px] uppercase font-bold tracking-widest">of</span>
+            <span className="text-xs font-bold text-gray-400">{meta.totalPage || 1}</span>
+          </div>
+          <button onClick={() => setPage(p => Math.min(meta.totalPage, p + 1))} disabled={page === meta.totalPage || meta.totalPage === 0}
+            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-2xl disabled:opacity-30 transition-all">
+            <FaChevronRight size={12} />
           </button>
         </div>
       )}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGetActivityLogsQuery, useClearActivityLogsMutation } from "../../redux/api/api";
-import { FaHistory, FaUser, FaTrash, FaUndo, FaEdit, FaPlus, FaShieldAlt } from "react-icons/fa";
+import { FaHistory, FaUser, FaTrash, FaUndo, FaEdit, FaPlus, FaShieldAlt, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import type { ActivityLog } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
@@ -89,7 +89,7 @@ export default function ActivityLogsPage() {
           <button
             onClick={handleClearAll}
             disabled={clearing}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold rounded-xl transition-all disabled:opacity-50">
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-semibold rounded-2xl transition-all disabled:opacity-50">
             <FaTrash size={10} />
             {clearing ? "Clearing..." : "Clear All"}
           </button>
@@ -190,20 +190,17 @@ export default function ActivityLogsPage() {
       {meta && meta.totalPage > 1 && (
         <div className="flex items-center justify-center gap-1.5">
           <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-            className="px-3 py-1.5 bg-gray-900 border border-white/5 rounded-lg text-gray-400 text-xs disabled:opacity-40 hover:text-white transition-colors">
-            Prev
+            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-2xl disabled:opacity-30 transition-all">
+            <FaChevronLeft size={12} />
           </button>
-          {Array.from({ length: Math.min(meta.totalPage, 5) }, (_, i) => i + 1).map(p => (
-            <button key={p} onClick={() => setPage(p)}
-              className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
-                p === page ? "bg-blue-600 text-white" : "bg-gray-900 border border-white/5 text-gray-400 hover:text-white"
-              }`}>
-              {p}
-            </button>
-          ))}
-          <button onClick={() => setPage(p => Math.min(meta.totalPage, p + 1))} disabled={page === meta.totalPage}
-            className="px-3 py-1.5 bg-gray-900 border border-white/5 rounded-lg text-gray-400 text-xs disabled:opacity-40 hover:text-white transition-colors">
-            Next
+          <div className="flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/10 rounded-2xl">
+            <span className="text-xs font-bold text-blue-400">{page}</span>
+            <span className="text-gray-600 text-[10px] uppercase font-bold tracking-widest">of</span>
+            <span className="text-xs font-bold text-gray-400">{meta?.totalPage || 1}</span>
+          </div>
+          <button onClick={() => setPage(p => Math.min(meta?.totalPage ?? 1, p + 1))} disabled={page === meta?.totalPage || meta?.totalPage === 0}
+            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white rounded-2xl disabled:opacity-30 transition-all">
+            <FaChevronRight size={12} />
           </button>
         </div>
       )}

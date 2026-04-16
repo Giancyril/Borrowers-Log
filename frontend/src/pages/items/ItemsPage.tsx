@@ -56,7 +56,7 @@ function ItemModal({ item, onClose }: { item?: Item; onClose: () => void }) {
             <h3 className="text-sm font-bold text-white">{item ? "Edit Item" : "Add New Item"}</h3>
             <p className="text-gray-500 text-xs mt-0.5">{item ? "Update item details" : "Add to borrowable inventory"}</p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="w-7 h-7 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
             <FaTimes size={12} />
           </button>
         </div>
@@ -96,9 +96,9 @@ function ItemModal({ item, onClose }: { item?: Item; onClose: () => void }) {
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-400 text-xs font-medium rounded-xl transition-colors">Cancel</button>
+              className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 text-xs font-medium rounded-2xl transition-all">Cancel</button>
             <button type="submit" disabled={busy}
-              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all">
+              className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold rounded-2xl transition-all">
               {busy ? "Saving..." : item ? "Update Item" : "Create Item"}
             </button>
           </div>
@@ -159,7 +159,7 @@ export default function ItemsPage() {
           <p className="text-gray-500 text-xs mt-0.5">{meta?.total ?? 0} item{meta?.total !== 1 ? "s" : ""} in inventory</p>
         </div>
         <button onClick={() => setModal("create")}
-          className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
+          className="inline-flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-2xl transition-all shadow-lg shadow-blue-900/20 whitespace-nowrap">
           <FaPlus size={11} /> Add Item
         </button>
       </div>

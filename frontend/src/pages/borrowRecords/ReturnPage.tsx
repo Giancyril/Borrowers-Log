@@ -101,11 +101,11 @@ export default function ReturnPage() {
             This item was returned on {fmt(record.actualReturnDate)}.
           </p>
           <Link
-            to={`/borrow-records/${id}`}
-            className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-sm font-medium rounded-xl transition-all"
-          >
-            ← View Record
-          </Link>
+          to={`/borrow-records/${id}`}
+          className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-medium rounded-2xl transition-all"
+        >
+          ← View Record
+        </Link>
         </div>
       </div>
     );
@@ -179,10 +179,10 @@ export default function ReturnPage() {
                 <button
                   key={c}
                   onClick={() => setCondition(c)}
-                  className={`px-3 py-1 rounded-lg text-xs font-medium border transition-all ${
+                  className={`px-3 py-1 rounded-2xl text-xs font-medium border transition-all ${
                     conditionOnReturn === c
                       ? "bg-emerald-600/20 border-emerald-500/40 text-emerald-300"
-                      : "bg-gray-800 border-white/5 text-gray-400 hover:text-white"
+                      : "bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10"
                   }`}
                 >
                   {c}
@@ -257,14 +257,14 @@ export default function ReturnPage() {
       <div className="flex gap-3 pb-6">
         <Link
           to={`/borrow-records/${id}`}
-          className="flex-1 py-2.5 text-center bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-300 text-sm font-medium rounded-xl transition-all"
+          className="flex-1 py-2.5 text-center bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-sm font-medium rounded-2xl transition-all"
         >
           Cancel
         </Link>
         <button
   onClick={handleReturn}
   disabled={submitting || !sigDone}
-  className={`flex-1 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-all ${
+  className={`flex-1 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-2xl transition-all ${
     damageNotes.trim()
       ? "bg-red-600 hover:bg-red-500"
       : "bg-emerald-600 hover:bg-emerald-500"

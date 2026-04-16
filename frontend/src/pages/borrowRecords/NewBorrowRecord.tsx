@@ -20,6 +20,7 @@ import {
   FaSearch, FaSpinner, FaChevronDown
 } from "react-icons/fa";
 import { Select } from "../../components/ui/Select";
+import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
 import type { Item, BorrowTemplate } from "../../types/types";
 import BarcodeScannerModal, { ScannedStudent } from "./BarcodeScannerModal";
 import { logToSheet } from "../../utils/sheetsLogger";
@@ -715,17 +716,13 @@ export default function NewBorrowRecord() {
                         className={inputCls} />
                       {errors[`qty_${idx}`] && <p className="text-red-400 text-xs mt-1">{errors[`qty_${idx}`]}</p>}
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <label className={labelCls}>Borrow Date</label>
-                      <input type="date" value={row.borrowDate}
-                        onChange={e => setCartRow(idx, "borrowDate", e.target.value)}
-                        className={inputCls} />
+                      <CustomDatePicker value={row.borrowDate} onChange={v => setCartRow(idx, "borrowDate", v)} />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <label className={labelCls}>Due Date *</label>
-                      <input type="date" value={row.dueDate}
-                        onChange={e => setCartRow(idx, "dueDate", e.target.value)}
-                        className={inputCls} />
+                      <CustomDatePicker value={row.dueDate} onChange={v => setCartRow(idx, "dueDate", v)} />
                       {errors[`due_${idx}`] && <p className="text-red-400 text-xs mt-1">{errors[`due_${idx}`]}</p>}
                     </div>
                   </div>
@@ -798,18 +795,18 @@ export default function NewBorrowRecord() {
         <div className={`flex mt-7 gap-3 ${step > 0 ? "justify-between" : "justify-end"}`}>
           {step > 0 && (
             <button onClick={back}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-white/8 text-gray-300 hover:bg-gray-800 text-sm font-medium transition-all">
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/5 border border-white/10 text-gray-300 hover:bg-white/10 text-sm font-medium transition-all">
               Back
             </button>
           )}
           {step < 2 ? (
             <button onClick={next}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all">
+              className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all">
               Continue
             </button>
           ) : (
             <button onClick={handleSubmit} disabled={isLoading || !sigDone}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-all">
+              className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold transition-all">
               {isLoading ? "Saving..." : cart.length > 1 ? `Save ${cart.length} Records` : "Save Record"}
             </button>
           )}

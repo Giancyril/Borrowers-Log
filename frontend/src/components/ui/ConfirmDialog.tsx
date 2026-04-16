@@ -69,13 +69,13 @@ export default function ConfirmDialog({
         {/* Header */}
         <div className="flex items-start justify-between px-5 pt-5 pb-4">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${v.iconBg}`}>
+            <div className={`w-10 h-10 rounded-2xl border flex items-center justify-center shrink-0 ${v.iconBg}`}>
               {v.icon}
             </div>
             <h3 className="text-white font-bold text-sm">{title}</h3>
           </div>
           <button onClick={onCancel}
-            className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0 ml-2">
+            className="w-7 h-7 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0 ml-2">
             <FaTimes size={11} />
           </button>
         </div>
@@ -86,11 +86,11 @@ export default function ConfirmDialog({
         {/* Actions */}
         <div className="flex gap-2 px-5 pb-5">
           <button onClick={onCancel}
-            className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-400 hover:text-white text-xs font-semibold rounded-xl transition-all">
+            className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white text-xs font-semibold rounded-2xl transition-all">
             {cancelText}
           </button>
           <button onClick={() => { onConfirm(); }}
-            className={`flex-1 py-2.5 text-white text-xs font-bold rounded-xl transition-all ${v.confirm}`}>
+            className={`flex-1 py-2.5 text-white text-xs font-bold rounded-2xl transition-all ${v.confirm}`}>
             {confirmText}
           </button>
         </div>

@@ -13,6 +13,7 @@ import {
   FaArrowLeft, FaUndo, FaTrash, FaTimes, FaEraser,
   FaCheckCircle, FaExclamationTriangle, FaEdit, FaPrint, FaUser, FaRedo,
 } from "react-icons/fa";
+import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
 import type { BorrowRecord } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
@@ -64,7 +65,7 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
             <h3 className="text-sm font-bold text-white">Edit Borrow Record</h3>
             <p className="text-gray-500 text-xs mt-0.5">Update borrower details & due date</p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="w-7 h-7 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
             <FaTimes size={12} />
           </button>
         </div>
@@ -86,11 +87,9 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
             </div>
           ))}
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="flex-1">
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Due Date</label>
-              <input type="date" value={form.dueDate}
-                onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
+              <CustomDatePicker value={form.dueDate} onChange={v => setForm(f => ({ ...f, dueDate: v }))} openUp={true} />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Quantity</label>
@@ -101,11 +100,11 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-400 text-xs font-medium rounded-xl transition-colors">
+              className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 text-xs font-medium rounded-2xl transition-all">
               Cancel
             </button>
             <button type="submit" disabled={isLoading}
-              className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition-all">
+              className="flex-1 py-2.5 bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white text-xs font-bold rounded-2xl transition-all">
               {isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
@@ -151,7 +150,7 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
             <h3 className="text-sm font-bold text-white">Process Return</h3>
             <p className="text-gray-500 text-xs mt-0.5">{record.borrowerName} · {record.item?.name}</p>
           </div>
-          <button onClick={onClose} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+          <button onClick={onClose} className="w-7 h-7 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
             <FaTimes size={12} />
           </button>
         </div>
@@ -160,22 +159,22 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Condition on Return</label>
             <input value={conditionOnReturn} onChange={e => setCondition(e.target.value)}
               placeholder="e.g. Good condition, no damage"
-              className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/30" />
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-all" />
           </div>
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Damage Notes</label>
             <textarea rows={2} value={damageNotes} onChange={e => setDamage(e.target.value)}
               placeholder="Describe any damage (leave blank if none)"
-              className={`w-full px-4 py-2.5 bg-gray-800 border rounded-xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-2 transition-all ${
+              className={`w-full px-4 py-2.5 bg-white/5 border rounded-2xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-1 transition-all ${
                 hasDamage
                   ? "border-red-500/30 focus:ring-red-500/20"
-                  : "border-white/8 focus:ring-emerald-500/30"
+                  : "border-white/10 focus:ring-emerald-500/20"
               }`} />
           </div>
 
           {/* Damage warning banner */}
           {hasDamage && (
-            <div className="flex items-start gap-2 px-3.5 py-3 bg-red-500/8 border border-red-500/20 rounded-xl">
+            <div className="flex items-start gap-2 px-3.5 py-3 bg-red-500/8 border border-red-500/20 rounded-2xl">
               <FaExclamationTriangle size={11} className="text-red-400 shrink-0 mt-0.5" />
               <div>
                 <p className="text-red-300 text-xs font-semibold">Damage detected</p>
@@ -196,7 +195,7 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
                 <FaEraser size={10} /> Clear
               </button>
             </div>
-            <div className="border-2 border-dashed border-white/10 rounded-xl overflow-hidden bg-gray-800">
+            <div className="border-2 border-dashed border-white/10 rounded-2xl overflow-hidden bg-gray-800">
               <SignatureCanvas
                 ref={sigRef}
                 canvasProps={{ className: "sig-canvas w-full", height: 150 }}
@@ -209,11 +208,11 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
           </div>
           <div className="flex gap-2 pt-1">
             <button onClick={onClose}
-              className="flex-1 py-2.5 bg-gray-800 hover:bg-gray-700 border border-white/5 text-gray-400 text-xs font-medium rounded-xl transition-colors">
+              className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 text-xs font-medium rounded-2xl transition-all">
               Cancel
             </button>
             <button onClick={handleReturn} disabled={isLoading || !sigDone}
-              className={`flex-1 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition-all ${
+              className={`flex-1 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold rounded-2xl transition-all ${
                 hasDamage
                   ? "bg-red-600 hover:bg-red-500"
                   : "bg-blue-600 hover:bg-blue-500"
