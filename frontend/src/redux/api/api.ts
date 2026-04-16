@@ -187,6 +187,16 @@ const api = baseApi.injectEndpoints({
       invalidatesTags: ["borrowTemplates"],
     }),
 
+    getStudentById: build.query({
+      query: (id: string) => `/students/${id}`,
+    }),
+    getStudentByDetails: build.query({
+      query: ({ name, email }: { name: string; email: string }) => ({
+        url: "/students/search",
+        params: { name, email },
+      }),
+    }),
+
     // ── Notifications (polls activity-logs, last 15, every 30s) ──────────
     getNotifications: build.query({
       query: () => ({ url: "/activity-logs", params: { limit: 15, page: 1 } }),
@@ -237,4 +247,6 @@ export const {
   useUpdateBorrowTemplateMutation,
   useDeleteBorrowTemplateMutation,
   useMarkItemRepairedMutation,
+  useGetStudentByIdQuery,
+  useGetStudentByDetailsQuery,
 } = api;

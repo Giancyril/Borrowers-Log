@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import SignatureCanvas from "react-signature-canvas";
 import { getSignatureData } from "../../utils/signature";
@@ -10,13 +10,20 @@ import {
   useGetBorrowTemplatesQuery,
   useCreateBorrowTemplateMutation,
   useDeleteBorrowTemplateMutation,
+  useGetStudentByIdQuery,
+  useGetStudentByDetailsQuery,
 } from "../../redux/api/api";
 import { toast } from "react-toastify";
 import {
   FaCheck, FaEraser, FaRedo, FaPlus, FaTrash,
-  FaInbox, FaLayerGroup, FaSave,
+  FaInbox, FaLayerGroup, FaSave, FaQrcode, FaUserCheck,
+  FaSearch, FaSpinner
 } from "react-icons/fa";
 import type { Item, BorrowTemplate } from "../../types/types";
+import BarcodeScannerModal, { ScannedStudent } from "./BarcodeScannerModal";
+import { logToSheet } from "../../utils/sheetsLogger";
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
@@ -33,6 +40,7 @@ const inputCls =
 const labelCls =
   "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5";
 
+// ── Step indicator ────────────────────────────────────────────────────────────
 const StepIndicator = ({ current }: { current: number }) => (
   <div className="flex items-center justify-center gap-0 mb-8">
     {steps.map((label, i) => (
@@ -41,7 +49,7 @@ const StepIndicator = ({ current }: { current: number }) => (
           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all ${
             i < current   ? "bg-blue-600 border-blue-600 text-white"
             : i === current ? "bg-blue-600/15 border-blue-500 text-blue-400"
-            : "bg-gray-800 border-gray-700 text-gray-600"
+            :                 "bg-gray-800 border-gray-700 text-gray-600"
           }`}>
             {i < current ? <FaCheck size={10} /> : i + 1}
           </div>
@@ -58,10 +66,10 @@ const StepIndicator = ({ current }: { current: number }) => (
 );
 
 interface CartItem {
-  itemId:            string;
-  quantityBorrowed:  number;
-  borrowDate:        string;
-  dueDate:           string;
+  itemId: string;
+  quantityBorrowed: number;
+  borrowDate: string;
+  dueDate: string;
   conditionOnBorrow: string;
 }
 
@@ -72,9 +80,9 @@ function TemplateDrawer({
   onApply: (t: BorrowTemplate) => void;
   onClose: () => void;
 }) {
-  const { data, isLoading }                       = useGetBorrowTemplatesQuery(undefined);
+  const { data, isLoading } = useGetBorrowTemplatesQuery(undefined);
   const [deleteTemplate, { isLoading: deleting }] = useDeleteBorrowTemplateMutation();
-  const templates: BorrowTemplate[]               = data?.data ?? [];
+  const templates: BorrowTemplate[] = data?.data ?? [];
 
   const handleDelete = async (id: string, name: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -97,11 +105,10 @@ function TemplateDrawer({
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white text-lg leading-none transition-colors">✕</button>
         </div>
-
         <div className="overflow-y-auto flex-1 p-4 space-y-2">
           {isLoading && (
             <div className="space-y-2">
-              {[1,2,3].map(i => <div key={i} className="h-16 bg-gray-800 rounded-xl animate-pulse" />)}
+              {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-800 rounded-xl animate-pulse" />)}
             </div>
           )}
           {!isLoading && templates.length === 0 && (
@@ -186,9 +193,7 @@ function SaveTemplateModal({
           <div>
             <label className={labelCls}>Default Due Days</label>
             <input
-              type="number"
-              min={1}
-              max={365}
+              type="number" min={1} max={365}
               value={offset}
               onChange={e => setOffset(Number(e.target.value))}
               className={inputCls}
@@ -215,20 +220,33 @@ function SaveTemplateModal({
   );
 }
 
+// ── useFetchStudent wrapper ───────────────────────────────────────────────────
+/**
+ * Wraps useGetStudentByIdQuery to match the interface BarcodeScannerModal expects.
+ * Skips the query when id is empty to avoid unnecessary requests.
+ */
+function useFetchStudent(id: string) {
+  return useGetStudentByIdQuery(id, { skip: !id });
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function NewBorrowRecord() {
-  const navigate       = useNavigate();
+  const navigate      = useNavigate();
   const [searchParams] = useSearchParams();
-  const sigRef         = useRef<SignatureCanvas>(null);
+  const sigRef        = useRef<SignatureCanvas>(null);
 
-  const isReborrow    = searchParams.get("reborrow")    === "true";
+  const isReborrow    = searchParams.get("reborrow") === "true";
   const fromRequestId = searchParams.get("fromRequest") ?? null;
 
-  const [step,            setStep]            = useState(0);
-  const [sigDone,         setSigDone]         = useState(false);
-  const [errors,          setErrors]          = useState<Record<string, string>>({});
-  const [showTemplates,   setShowTemplates]   = useState(false);
-  const [showSaveModal,   setShowSaveModal]   = useState(false);
+  const [step,          setStep]          = useState(0);
+  const [sigDone,       setSigDone]       = useState(false);
+  const [errors,        setErrors]        = useState<Record<string, string>>({});
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showScanner,   setShowScanner]   = useState(false);
+  const [scannedStudent, setScannedStudent] = useState<ScannedStudent | null>(null);
+
+  const scannedAtRef = useRef<string>("");
 
   const [borrowerForm, setBorrowerForm] = useState({
     borrowerName:       searchParams.get("borrowerName")       ?? "",
@@ -238,7 +256,7 @@ export default function NewBorrowRecord() {
   });
 
   const [cart, setCart] = useState<CartItem[]>([{
-    itemId:           searchParams.get("itemId")  ?? "",
+    itemId:           searchParams.get("itemId") ?? "",
     quantityBorrowed: Number(searchParams.get("quantity")) || 1,
     borrowDate:       todayStr(),
     dueDate:          searchParams.get("dueDate") ?? todayStr(),
@@ -249,8 +267,8 @@ export default function NewBorrowRecord() {
   const items = (itemsData?.data ?? []) as Item[];
 
   const [createRecord,      { isLoading: creatingSingle }] = useCreateBorrowRecordMutation();
-  const [createBulkRecords, { isLoading: creatingBulk }]   = useCreateBulkBorrowRecordsMutation();
-  const [approveRequest,    { isLoading: approving }]      = useApproveBorrowRequestMutation();
+  const [createBulkRecords, { isLoading: creatingBulk   }] = useCreateBulkBorrowRecordsMutation();
+  const [approveRequest,    { isLoading: approving      }] = useApproveBorrowRequestMutation();
   const [createTemplate,    { isLoading: savingTemplate }] = useCreateBorrowTemplateMutation();
   const isLoading = creatingSingle || creatingBulk || approving;
 
@@ -269,9 +287,8 @@ export default function NewBorrowRecord() {
   const removeCartRow = (idx: number) =>
     setCart(c => c.filter((_, i) => i !== idx));
 
-  // ── Derive a "typical" due offset from the first cart row for the save modal
   const currentDueOffset = (() => {
-    const row = cart[0];
+    const row  = cart[0];
     if (!row.borrowDate || !row.dueDate) return 7;
     const diff = Math.round(
       (new Date(row.dueDate).getTime() - new Date(row.borrowDate).getTime()) / 86400000
@@ -286,7 +303,6 @@ export default function NewBorrowRecord() {
       borrowerDepartment: t.borrowerDepartment,
       purpose:            t.purpose,
     });
-    // Apply due offset to every cart row
     setCart(c => c.map(row => ({
       ...row,
       conditionOnBorrow: t.conditionOnBorrow || row.conditionOnBorrow,
@@ -314,6 +330,86 @@ export default function NewBorrowRecord() {
     }
   };
 
+  // ── Fetch Student by Name & Email ──────────────────────────────────────────
+  const [shouldFetchByDetails, setShouldFetchByDetails] = useState(false);
+  const { data: studentByDetails, isFetching: isFetchingByDetails, error: fetchDetailsError } = useGetStudentByDetailsQuery(
+    { name: borrowerForm.borrowerName, email: borrowerForm.borrowerEmail },
+    { skip: !shouldFetchByDetails || !borrowerForm.borrowerName || !borrowerForm.borrowerEmail }
+  );
+
+  const handleFetchDetails = async () => {
+    if (!borrowerForm.borrowerName || !borrowerForm.borrowerEmail) {
+      toast.warn("Please enter both Name and Email to fetch info.");
+      return;
+    }
+    setShouldFetchByDetails(true);
+  };
+
+  useEffect(() => {
+    if (studentByDetails) {
+      const student = studentByDetails.data || studentByDetails;
+      setBorrowerForm(f => ({
+        ...f,
+        borrowerName:       student.name       || f.borrowerName,
+        borrowerEmail:      student.email      || f.borrowerEmail,
+        borrowerDepartment: student.department || f.borrowerDepartment,
+      }));
+      setScannedStudent({
+        id:         student.id,
+        name:       student.name,
+        department: student.department,
+        email:      student.email,
+        raw:        "Fetched from Masterlist",
+      });
+      setShouldFetchByDetails(false);
+      toast.success(`Found: ${student.name}`);
+    }
+    if (fetchDetailsError) {
+      toast.error("Student not found in masterlist.");
+      setShouldFetchByDetails(false);
+    }
+  }, [studentByDetails, fetchDetailsError]);
+
+  // ── Handle successful scan ────────────────────────────────────────────────
+  // The modal already resolved email via DB enrichment or auto-generation,
+  // so we can trust student.email is always populated here.
+  const handleScan = (student: ScannedStudent) => {
+    const scanTime = new Date().toISOString();
+    scannedAtRef.current = scanTime;
+    setScannedStudent(student);
+    setBorrowerForm(f => ({
+      ...f,
+      borrowerName:       student.name       || f.borrowerName,
+      borrowerEmail:      student.email      || f.borrowerEmail,
+      borrowerDepartment: student.department || f.borrowerDepartment,
+    }));
+    setShowScanner(false);
+    toast.success(`Student scanned: ${student.name}`);
+
+    logToSheet({
+      studentId:        student.id || student.name,
+      borrowerName:     student.name,
+      department:       student.department,
+      email:            student.email,
+      itemName:         "— Quick Scan Log —",
+      qty:              1,
+      borrowDate:       scanTime.split("T")[0],
+      dueDate:          "",
+      status:           "SCANNED",
+      purpose:          "",
+      conditionOnBorrow: "",
+      scannedAt:        scanTime,
+      recordId:         "",
+    }).catch(console.error);
+  };
+
+  const clearScan = () => {
+    setScannedStudent(null);
+    scannedAtRef.current = "";
+    setBorrowerForm({ borrowerName: "", borrowerEmail: "", borrowerDepartment: "", purpose: "" });
+  };
+
+  // ── Validation ────────────────────────────────────────────────────────────
   const validateStep = (s: number): boolean => {
     const e: Record<string, string> = {};
     if (s === 0 && !borrowerForm.borrowerName.trim()) {
@@ -342,6 +438,7 @@ export default function NewBorrowRecord() {
   const next = () => { if (validateStep(step)) setStep(s => s + 1); };
   const back = () => { setStep(s => s - 1); setErrors({}); };
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!sigRef.current || sigRef.current.isEmpty()) {
       toast.error("Please draw your signature before submitting.");
@@ -349,6 +446,29 @@ export default function NewBorrowRecord() {
     }
     const borrowSignature = getSignatureData(sigRef);
     const isBulk = cart.length > 1;
+
+    try {
+      for (const row of cart) {
+        const item = items.find(i => i.id === row.itemId);
+        await logToSheet({
+          studentId:        scannedStudent?.id || scannedStudent?.name || "",
+          borrowerName:     borrowerForm.borrowerName,
+          department:       borrowerForm.borrowerDepartment,
+          email:            borrowerForm.borrowerEmail,
+          itemName:         item?.name ?? row.itemId,
+          qty:              row.quantityBorrowed,
+          borrowDate:       row.borrowDate,
+          dueDate:          row.dueDate,
+          status:           "ACTIVE",
+          purpose:          borrowerForm.purpose,
+          conditionOnBorrow: row.conditionOnBorrow,
+          scannedAt:        scannedAtRef.current,
+          recordId:         "DB_PAUSED_OR_PENDING",
+        });
+      }
+    } catch (e) {
+      console.error("Sheets error", e);
+    }
 
     try {
       if (isBulk) {
@@ -369,19 +489,30 @@ export default function NewBorrowRecord() {
         }).unwrap();
         if (fromRequestId) await approveRequest({ id: fromRequestId }).unwrap();
         toast.success(
-          fromRequestId ? "Request approved — borrow record created!"
-          : isReborrow  ? "Re-borrow record created!"
-          : "Borrow record created!"
+          fromRequestId  ? "Request approved — borrow record created!"
+          : isReborrow   ? "Re-borrow record created!"
+          :                "Borrow record created!"
         );
         navigate(`/borrow-records/${res.data.id}`);
       }
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to create record");
+      toast.error(err?.data?.message ?? "Failed to save to database. Record is saved to Sheets!");
     }
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="max-w-xl mx-auto">
+
+      {/* Scanner modal — useFetchStudent enables DB enrichment */}
+      {showScanner && (
+        <BarcodeScannerModal
+          onScan={handleScan}
+          onClose={() => setShowScanner(false)}
+          useFetchStudent={useFetchStudent}
+        />
+      )}
+
       {showTemplates && (
         <TemplateDrawer onApply={applyTemplate} onClose={() => setShowTemplates(false)} />
       )}
@@ -395,7 +526,7 @@ export default function NewBorrowRecord() {
       )}
 
       {/* Page header */}
-      <div className="flex items-start justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-white">
@@ -415,9 +546,8 @@ export default function NewBorrowRecord() {
           <p className="text-gray-500 text-sm">Step {step + 1} of {steps.length} — {steps[step]}</p>
         </div>
 
-        {/* Template buttons — only show on step 0 */}
         {step === 0 && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap sm:justify-end w-full sm:w-auto">
             <button
               onClick={() => setShowSaveModal(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-400 hover:text-white text-xs font-semibold rounded-xl transition-all"
@@ -429,6 +559,12 @@ export default function NewBorrowRecord() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/25 text-blue-400 text-xs font-semibold rounded-xl transition-all"
             >
               <FaLayerGroup size={10} /> Use Template
+            </button>
+            <button
+              onClick={() => setShowScanner(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/25 text-cyan-400 text-xs font-semibold rounded-xl transition-all"
+            >
+              <FaQrcode size={10} /> Scan ID
             </button>
           </div>
         )}
@@ -455,11 +591,43 @@ export default function NewBorrowRecord() {
       <div className="bg-gray-900 border border-white/5 rounded-2xl p-5 sm:p-7">
         <StepIndicator current={step} />
 
-        {/* ── Step 0: Borrower Info ── */}
+        {/* Step 0: Borrower Info */}
         {step === 0 && (
           <div className="space-y-4">
+
+            {scannedStudent && (
+              <div className="flex items-center gap-3 px-4 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
+                  <FaUserCheck size={13} className="text-cyan-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-cyan-300 text-xs font-semibold truncate">{scannedStudent.name}</p>
+                  {scannedStudent.id && (
+                    <p className="text-gray-500 text-[10px]">ID: {scannedStudent.id}</p>
+                  )}
+                </div>
+                <button
+                  onClick={clearScan}
+                  className="text-gray-600 hover:text-gray-300 text-xs transition-colors shrink-0"
+                  title="Clear scanned data"
+                >✕</button>
+              </div>
+            )}
+
             <div>
-              <label className={labelCls}>Borrower Name *</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className={labelCls}>Borrower Name *</label>
+                {!scannedStudent && (
+                  <button
+                    onClick={handleFetchDetails}
+                    disabled={isFetchingByDetails}
+                    className="px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[9px] font-black text-blue-400 hover:text-blue-300 flex items-center gap-1.5 transition-all uppercase tracking-wider active:scale-95 disabled:opacity-50"
+                  >
+                    {isFetchingByDetails ? <FaSpinner className="animate-spin" size={8} /> : <FaSearch size={8} />}
+                    Fetch Student Info
+                  </button>
+                )}
+              </div>
               <input value={borrowerForm.borrowerName}
                 onChange={e => setBorrower("borrowerName", e.target.value)}
                 placeholder=" " className={inputCls} />
@@ -489,7 +657,7 @@ export default function NewBorrowRecord() {
           </div>
         )}
 
-        {/* ── Step 1: Items & Dates ── */}
+        {/* Step 1: Items & Dates */}
         {step === 1 && (
           <div className="space-y-5">
             {errors.duplicates && (
@@ -578,11 +746,14 @@ export default function NewBorrowRecord() {
           </div>
         )}
 
-        {/* ── Step 2: Signature ── */}
+        {/* Step 2: Signature */}
         {step === 2 && (
           <div className="space-y-4">
             <div className="bg-gray-800/50 border border-white/5 rounded-xl px-4 py-3 text-xs text-gray-400 space-y-1">
               <p><span className="text-gray-300 font-semibold">Borrower:</span> {borrowerForm.borrowerName}</p>
+              {scannedStudent?.id && (
+                <p><span className="text-gray-300 font-semibold">Student ID:</span> {scannedStudent.id}</p>
+              )}
               {cart.map((row, idx) => {
                 const item = items.find(i => i.id === row.itemId);
                 return (

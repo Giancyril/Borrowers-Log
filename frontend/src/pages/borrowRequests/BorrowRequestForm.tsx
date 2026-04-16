@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { useGetItemsQuery, useCreateBorrowRequestMutation } from "../../redux/api/api";
+import { useState, useEffect } from "react";
+import { 
+  useGetItemsQuery, 
+  useCreateBorrowRequestMutation,
+  useGetStudentByDetailsQuery,
+  useGetStudentByIdQuery
+} from "../../redux/api/api";
 import { toast } from "react-toastify";
-import { FaCheckCircle, FaBoxOpen } from "react-icons/fa";
+import { FaCheckCircle, FaBoxOpen, FaSearch, FaSpinner } from "react-icons/fa";
 import type { Item } from "../../types/types";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -31,6 +36,39 @@ export default function BorrowRequestForm() {
   const selectedItem = items.find((i) => i.id === form.itemId);
 
   const [createRequest, { isLoading }] = useCreateBorrowRequestMutation();
+
+  // ── Fetch Student by Name & Email ──────────────────────────────────────────
+  const [shouldFetchByDetails, setShouldFetchByDetails] = useState(false);
+  const { data: studentByDetails, isFetching: isFetchingByDetails, error: fetchDetailsError } = useGetStudentByDetailsQuery(
+    { name: form.borrowerName, email: form.borrowerEmail },
+    { skip: !shouldFetchByDetails || !form.borrowerName || !form.borrowerEmail }
+  );
+
+  const handleFetchDetails = async () => {
+    if (!form.borrowerName || !form.borrowerEmail) {
+      toast.warn("Please enter both Name and Email to fetch info.");
+      return;
+    }
+    setShouldFetchByDetails(true);
+  };
+
+  useEffect(() => {
+    if (studentByDetails) {
+      const student = studentByDetails.data || studentByDetails;
+      setForm(f => ({
+        ...f,
+        borrowerName:       student.name       || f.borrowerName,
+        borrowerEmail:      student.email      || f.borrowerEmail,
+        borrowerDepartment: student.department || f.borrowerDepartment,
+      }));
+      setShouldFetchByDetails(false);
+      toast.success(`Found: ${student.name}`);
+    }
+    if (fetchDetailsError) {
+      toast.error("Student not found in masterlist.");
+      setShouldFetchByDetails(false);
+    }
+  }, [studentByDetails, fetchDetailsError]);
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -127,7 +165,20 @@ export default function BorrowRequestForm() {
         <div className="bg-gray-900 border border-white/5 rounded-2xl p-5 sm:p-7 space-y-4">
           {/* Borrower Info */}
           <div>
-            <label className={labelCls}>Full Name *</label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className={labelCls}>Full Name *</label>
+              {!form.borrowerDepartment && (
+                <button
+                  type="button"
+                  onClick={handleFetchDetails}
+                  disabled={isFetchingByDetails}
+                  className="px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-[9px] font-black text-blue-400 hover:text-blue-300 flex items-center gap-1.5 transition-all uppercase tracking-wider active:scale-95 disabled:opacity-50"
+                >
+                  {isFetchingByDetails ? <FaSpinner className="animate-spin" size={8} /> : <FaSearch size={8} />}
+                  Verify with Masterlist
+                </button>
+              )}
+            </div>
             <input
               value={form.borrowerName}
               onChange={(e) => set("borrowerName", e.target.value)}

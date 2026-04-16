@@ -7,6 +7,7 @@ import auth                        from "../middlewares/auth";
 import { activityLogController } from "../modules/activityLog/activityLog.controller";
 import { remindersController } from "../modules/reminders/reminders.controller";
 import { borrowTemplatesController } from "../modules/borrowTemplates/borrowTemplates.controller";
+import { studentController } from "../modules/students/students.controller";
 const router = Router();
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -64,6 +65,10 @@ router.delete("/borrow-templates/:id", auth(), borrowTemplatesController.deleteT
 
 // ── Borrow Requests ─────────────────────────────────────────
 router.get("/borrow-requests", auth(), borrowRequestsController.getRequests);
+
+// ── Students Masterlist ──────────────────────────────────────
+router.get("/students/search", auth(), studentController.getStudentByDetails);
+router.get("/students/:id", auth(), studentController.getStudentById);
 
 // PUBLIC (no login)
 router.post("/borrow-requests", borrowRequestsController.createRequest);
