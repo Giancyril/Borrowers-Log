@@ -356,7 +356,7 @@ export default function AnalyticsPage() {
             <CardHeader title="Longest Active Borrow" sub="Requires immediate attention" />
             <div className="p-6 bg-gradient-to-br from-white/[0.01] to-transparent">
               <div className="flex items-center gap-5">
-                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center shrink-0 shadow-lg shadow-amber-500/10">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col items-center justify-center shrink-0">
                   <p className="text-amber-400 text-2xl font-black leading-none">{stats.longestActiveBorrow.days}</p>
                   <p className="text-amber-500/70 text-[10px] font-bold mt-1">DAYS</p>
                 </div>

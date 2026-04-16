@@ -17,8 +17,9 @@ import { toast } from "react-toastify";
 import {
   FaCheck, FaEraser, FaRedo, FaPlus, FaTrash,
   FaInbox, FaLayerGroup, FaSave, FaQrcode, FaUserCheck,
-  FaSearch, FaSpinner
+  FaSearch, FaSpinner, FaChevronDown
 } from "react-icons/fa";
+import { Select } from "../../components/ui/Select";
 import type { Item, BorrowTemplate } from "../../types/types";
 import BarcodeScannerModal, { ScannedStudent } from "./BarcodeScannerModal";
 import { logToSheet } from "../../utils/sheetsLogger";
@@ -36,7 +37,7 @@ const dueDateFromOffset = (offsetDays: number) => {
 const steps = ["Borrower Info", "Items & Dates", "Signature"];
 
 const inputCls =
-  "w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
+  "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all";
 const labelCls =
   "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5";
 
@@ -96,8 +97,8 @@ function TemplateDrawer({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl max-h-[80vh] flex flex-col animate-in zoom-in-95 duration-200">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div className="flex items-center gap-2">
             <FaLayerGroup size={12} className="text-blue-400" />
@@ -119,8 +120,8 @@ function TemplateDrawer({
             </div>
           )}
           {templates.map(t => (
-            <button key={t.id} onClick={() => onApply(t)}
-              className="w-full text-left p-4 bg-gray-800/60 hover:bg-gray-800 border border-white/5 hover:border-white/10 rounded-xl transition-all group">
+            <div key={t.id} onClick={() => onApply(t)}
+              className="w-full text-left p-4 bg-gray-800/60 hover:bg-gray-800 border border-white/5 hover:border-white/10 rounded-xl transition-all group cursor-pointer">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-white truncate">{t.name}</p>
@@ -151,7 +152,7 @@ function TemplateDrawer({
                   <FaTrash size={9} />
                 </button>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>
@@ -385,22 +386,6 @@ export default function NewBorrowRecord() {
     }));
     setShowScanner(false);
     toast.success(`Student scanned: ${student.name}`);
-
-    logToSheet({
-      studentId:        student.id || student.name,
-      borrowerName:     student.name,
-      department:       student.department,
-      email:            student.email,
-      itemName:         "— Quick Scan Log —",
-      qty:              1,
-      borrowDate:       scanTime.split("T")[0],
-      dueDate:          "",
-      status:           "SCANNED",
-      purpose:          "",
-      conditionOnBorrow: "",
-      scannedAt:        scanTime,
-      recordId:         "",
-    }).catch(console.error);
   };
 
   const clearScan = () => {
@@ -448,37 +433,39 @@ export default function NewBorrowRecord() {
     const isBulk = cart.length > 1;
 
     try {
-      for (const row of cart) {
-        const item = items.find(i => i.id === row.itemId);
-        await logToSheet({
-          studentId:        scannedStudent?.id || scannedStudent?.name || "",
-          borrowerName:     borrowerForm.borrowerName,
-          department:       borrowerForm.borrowerDepartment,
-          email:            borrowerForm.borrowerEmail,
-          itemName:         item?.name ?? row.itemId,
-          qty:              row.quantityBorrowed,
-          borrowDate:       row.borrowDate,
-          dueDate:          row.dueDate,
-          status:           "ACTIVE",
-          purpose:          borrowerForm.purpose,
-          conditionOnBorrow: row.conditionOnBorrow,
-          scannedAt:        scannedAtRef.current,
-          recordId:         "DB_PAUSED_OR_PENDING",
-        });
-      }
-    } catch (e) {
-      console.error("Sheets error", e);
-    }
-
-    try {
       if (isBulk) {
         const records = cart.map(row => ({
           ...borrowerForm, ...row,
           quantityBorrowed: Number(row.quantityBorrowed),
           borrowSignature,
         }));
-        await createBulkRecords({ records }).unwrap();
+        const bulkRes: any = await createBulkRecords({ records }).unwrap();
         if (fromRequestId) await approveRequest({ id: fromRequestId }).unwrap();
+
+        // ── Log to Sheets (Post-DB) ──────────────────────────────────────────
+        const createdRecords = bulkRes.data || bulkRes;
+        if (Array.isArray(createdRecords)) {
+          for (let i = 0; i < createdRecords.length; i++) {
+            const rec  = createdRecords[i];
+            const item = items.find(it => it.id === rec.itemId);
+            logToSheet({
+              studentId:        scannedStudent?.id || scannedStudent?.name || "",
+              borrowerName:     borrowerForm.borrowerName,
+              department:       borrowerForm.borrowerDepartment,
+              email:            borrowerForm.borrowerEmail,
+              itemName:         item?.name ?? rec.itemId,
+              qty:              rec.quantityBorrowed,
+              borrowDate:       rec.borrowDate,
+              dueDate:          rec.dueDate,
+              status:           "ACTIVE",
+              purpose:          borrowerForm.purpose,
+              conditionOnBorrow: rec.conditionOnBorrow,
+              scannedAt:        scannedAtRef.current,
+              recordId:         rec.id,
+            }).catch(console.error);
+          }
+        }
+
         toast.success(`${records.length} borrow records created!`);
         navigate("/borrow-records");
       } else {
@@ -488,15 +475,35 @@ export default function NewBorrowRecord() {
           borrowSignature,
         }).unwrap();
         if (fromRequestId) await approveRequest({ id: fromRequestId }).unwrap();
+
+        // ── Log to Sheets (Post-DB) ──────────────────────────────────────────
+        const rec = res.data || res;
+        const item = items.find(it => it.id === rec.itemId);
+        logToSheet({
+          studentId:        scannedStudent?.id || scannedStudent?.name || "",
+          borrowerName:     borrowerForm.borrowerName,
+          department:       borrowerForm.borrowerDepartment,
+          email:            borrowerForm.borrowerEmail,
+          itemName:         item?.name ?? rec.itemId,
+          qty:              rec.quantityBorrowed,
+          borrowDate:       rec.borrowDate,
+          dueDate:          rec.dueDate,
+          status:           "ACTIVE",
+          purpose:          borrowerForm.purpose,
+          conditionOnBorrow: rec.conditionOnBorrow,
+          scannedAt:        scannedAtRef.current,
+          recordId:         rec.id,
+        }).catch(console.error);
+
         toast.success(
           fromRequestId  ? "Request approved — borrow record created!"
           : isReborrow   ? "Re-borrow record created!"
           :                "Borrow record created!"
         );
-        navigate(`/borrow-records/${res.data.id}`);
+        navigate(`/borrow-records/${rec.id}`);
       }
     } catch (err: any) {
-      toast.error(err?.data?.message ?? "Failed to save to database. Record is saved to Sheets!");
+      toast.error(err?.data?.message ?? "Failed to save to database.");
     }
   };
 
@@ -547,24 +554,24 @@ export default function NewBorrowRecord() {
         </div>
 
         {step === 0 && (
-          <div className="flex items-center gap-2 flex-wrap sm:justify-end w-full sm:w-auto">
+          <div className="flex items-center gap-1.5 sm:gap-2 sm:justify-end">
             <button
               onClick={() => setShowSaveModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-400 hover:text-white text-xs font-semibold rounded-xl transition-all"
+              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-gray-800 hover:bg-gray-700 border border-white/8 text-gray-400 hover:text-white text-[10px] sm:text-xs font-bold sm:font-semibold rounded-lg sm:rounded-xl transition-all whitespace-nowrap"
             >
-              <FaSave size={10} /> Save as Template
+              <FaSave className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Save Template
             </button>
             <button
               onClick={() => setShowTemplates(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/25 text-blue-400 text-xs font-semibold rounded-xl transition-all"
+              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/25 text-blue-400 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-lg sm:rounded-xl transition-all whitespace-nowrap"
             >
-              <FaLayerGroup size={10} /> Use Template
+              <FaLayerGroup className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Use Template
             </button>
             <button
               onClick={() => setShowScanner(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/25 text-cyan-400 text-xs font-semibold rounded-xl transition-all"
+              className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 py-1.5 sm:px-4 sm:py-2 bg-blue-500/15 hover:bg-blue-500/25 border border-blue-500/25 text-blue-400 text-[10px] sm:text-xs font-bold sm:font-semibold rounded-lg sm:rounded-xl transition-all whitespace-nowrap"
             >
-              <FaQrcode size={10} /> Scan ID
+              <FaQrcode className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Scan ID
             </button>
           </div>
         )}
@@ -641,7 +648,7 @@ export default function NewBorrowRecord() {
                   placeholder=" " className={inputCls} />
               </div>
               <div>
-                <label className={labelCls}>Department / Section</label>
+                <label className={labelCls}>Department</label>
                 <input value={borrowerForm.borrowerDepartment}
                   onChange={e => setBorrower("borrowerDepartment", e.target.value)}
                   placeholder=" " className={inputCls} />
@@ -678,20 +685,19 @@ export default function NewBorrowRecord() {
                       </button>
                     )}
                   </div>
-                  <div>
-                    <label className={labelCls}>Item *</label>
-                    <select value={row.itemId}
-                      onChange={e => setCartRow(idx, "itemId", e.target.value)}
-                      className={`${inputCls} appearance-none`}>
-                      <option value="">Select an item</option>
-                      {items.map(item => (
-                        <option key={item.id} value={item.id} disabled={item.availableQuantity === 0}>
-                          {item.name} — {item.availableQuantity} available{item.availableQuantity === 0 ? " (Unavailable)" : ""}
-                        </option>
-                      ))}
-                    </select>
-                    {errors[`item_${idx}`] && <p className="text-red-400 text-xs mt-1">{errors[`item_${idx}`]}</p>}
-                  </div>
+                  <Select
+                    label="Item *"
+                    value={row.itemId}
+                    onChange={e => setCartRow(idx, "itemId", e.target.value)}
+                    error={errors[`item_${idx}`]}
+                  >
+                    <option value="" className="bg-gray-900 text-white">Select an item</option>
+                    {items.map(item => (
+                      <option key={item.id} value={item.id} disabled={item.availableQuantity === 0} className="bg-gray-900 text-white disabled:text-gray-600">
+                        {item.name} — {item.availableQuantity} available{item.availableQuantity === 0 ? " (Unavailable)" : ""}
+                      </option>
+                    ))}
+                  </Select>
                   {selectedItem && (
                     <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl px-3 py-2">
                       <p className="text-blue-300 text-xs font-semibold">{selectedItem.name}</p>

@@ -6,13 +6,14 @@ import {
   useGetStudentByIdQuery
 } from "../../redux/api/api";
 import { toast } from "react-toastify";
-import { FaCheckCircle, FaBoxOpen, FaSearch, FaSpinner } from "react-icons/fa";
+import { FaCheckCircle, FaBoxOpen, FaSearch, FaSpinner, FaChevronDown } from "react-icons/fa";
+import { Select } from "../../components/ui/Select";
 import type { Item } from "../../types/types";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
 const inputCls =
-  "w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
+  "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all";
 const labelCls =
   "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5";
 
@@ -182,7 +183,7 @@ export default function BorrowRequestForm() {
             <input
               value={form.borrowerName}
               onChange={(e) => set("borrowerName", e.target.value)}
-              placeholder="Juan dela Cruz"
+              placeholder=" "
               className={inputCls}
             />
             {errors.borrowerName && (
@@ -197,16 +198,16 @@ export default function BorrowRequestForm() {
                 type="email"
                 value={form.borrowerEmail}
                 onChange={(e) => set("borrowerEmail", e.target.value)}
-                placeholder="juan@nbsc.edu.ph"
+                placeholder=" "
                 className={inputCls}
               />
             </div>
             <div>
-              <label className={labelCls}>Department / Section</label>
+              <label className={labelCls}>Department</label>
               <input
                 value={form.borrowerDepartment}
                 onChange={(e) => set("borrowerDepartment", e.target.value)}
-                placeholder="BSIT 2A"
+                placeholder=" "
                 className={inputCls}
               />
             </div>
@@ -215,7 +216,7 @@ export default function BorrowRequestForm() {
           <div>
             <label className={labelCls}>Purpose *</label>
             <textarea
-              rows={2}
+              rows={1}
               value={form.purpose}
               onChange={(e) => set("purpose", e.target.value)}
               placeholder="e.g. Class presentation in Room 203"
@@ -224,29 +225,25 @@ export default function BorrowRequestForm() {
           </div>
 
           {/* Item Selection */}
-          <div>
-            <label className={labelCls}>Item Requested *</label>
-            <select
-              value={form.itemId}
-              onChange={(e) => set("itemId", e.target.value)}
-              className={`${inputCls} appearance-none`}
-            >
-              <option value="">Select an item</option>
-              {items.map((item) => (
-                <option
-                  key={item.id}
-                  value={item.id}
-                  disabled={item.availableQuantity === 0}
-                >
-                  {item.name} — {item.availableQuantity} available
-                  {item.availableQuantity === 0 ? " (Unavailable)" : ""}
-                </option>
-              ))}
-            </select>
-            {errors.itemId && (
-              <p className="text-red-400 text-xs mt-1">{errors.itemId}</p>
-            )}
-          </div>
+          <Select
+            label="Item Requested *"
+            value={form.itemId}
+            onChange={(e) => set("itemId", e.target.value)}
+            error={errors.itemId}
+          >
+            <option value="" className="bg-gray-900 text-white">Select an item</option>
+            {items.map((item) => (
+              <option
+                key={item.id}
+                value={item.id}
+                disabled={item.availableQuantity === 0}
+                className="bg-gray-900 text-white disabled:text-gray-600"
+              >
+                {item.name} — {item.availableQuantity} available
+                {item.availableQuantity === 0 ? " (Unavailable)" : ""}
+              </option>
+            ))}
+          </Select>
 
           {selectedItem && (
             <div className="bg-blue-500/5 border border-blue-500/15 rounded-xl px-4 py-3">

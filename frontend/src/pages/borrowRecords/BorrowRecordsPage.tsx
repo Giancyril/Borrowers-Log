@@ -212,7 +212,7 @@ export default function BorrowRecordsPage() {
               </label>
               <input type="date" value={dateFrom}
                 onChange={e => { setDateFrom(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5">
@@ -220,7 +220,7 @@ export default function BorrowRecordsPage() {
               </label>
               <input type="date" value={dateTo}
                 onChange={e => { setDateTo(e.target.value); setPage(1); }}
-                className="w-full px-3 py-2 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
             </div>
           </div>
         </div>
@@ -228,7 +228,7 @@ export default function BorrowRecordsPage() {
 
       {/* ── Bulk action bar ── */}
       {selected.size > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-600/10 border border-blue-500/20 rounded-xl">
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-600/10 border border-blue-500/20 rounded-2xl transition-all animate-in slide-in-from-top-2 duration-200">
           <span className="text-blue-300 text-sm font-semibold">{selected.size} selected</span>
           <div className="flex items-center gap-2 ml-auto">
             <button onClick={handleBulkReturn} disabled={bulkReturning}
@@ -250,10 +250,10 @@ export default function BorrowRecordsPage() {
       {/* ── Search + Tabs ── */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
-          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={12} />
+          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-colors group-focus-within:text-blue-400" size={12} />
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search by borrower name, item..."
-            className="w-full pl-10 pr-10 py-2.5 bg-gray-900 border border-white/5 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all" />
+            className="w-full pl-10 pr-10 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 transition-all" />
           {search && (
             <button onClick={() => { setSearch(""); setPage(1); }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors">
@@ -261,11 +261,11 @@ export default function BorrowRecordsPage() {
             </button>
           )}
         </div>
-        <div className="flex gap-1 bg-gray-900 border border-white/5 rounded-xl p-1">
+        <div className="flex gap-1 bg-white/5 border border-white/10 rounded-2xl p-1 transition-all">
           {STATUS_TABS.map(({ label, value }) => (
             <button key={value} onClick={() => { setStatus(value); setPage(1); }}
-              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                status === value ? "bg-blue-600 text-white shadow-sm" : "text-gray-400 hover:text-white"
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
+                status === value ? "bg-blue-600 text-white shadow-md shadow-blue-900/20" : "text-gray-400 hover:text-white"
               }`}>
               {label}
             </button>

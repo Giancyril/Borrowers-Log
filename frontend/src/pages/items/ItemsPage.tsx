@@ -7,8 +7,9 @@ import {
 import { toast } from "react-toastify";
 import {
   FaPlus, FaEdit, FaTrash, FaBoxOpen, FaTimes,
-  FaSearch, FaExclamationTriangle, FaTools,
+  FaSearch, FaExclamationTriangle, FaTools, FaChevronDown
 } from "react-icons/fa";
+import { Select } from "../../components/ui/Select";
 import type { Item, ItemCategory } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
@@ -64,34 +65,34 @@ function ItemModal({ item, onClose }: { item?: Item; onClose: () => void }) {
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Item Name *</label>
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required maxLength={120}
               placeholder="e.g. EPSON Projector, History Book"
-              className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/30" />
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 transition-all" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Category *</label>
-              <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value as ItemCategory })}
-                className="w-full px-3 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30 appearance-none">
-                {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABEL[c]}</option>)}
-              </select>
-            </div>
+            <Select
+              label="Category *"
+              value={form.category}
+              onChange={e => setForm({ ...form, category: e.target.value as ItemCategory })}
+            >
+              {CATEGORIES.map(c => <option key={c} value={c} className="bg-gray-900 text-white">{CAT_LABEL[c]}</option>)}
+            </Select>
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Total Quantity *</label>
               <input type="number" min={1} value={form.totalQuantity}
                 onChange={e => setForm({ ...form, totalQuantity: Number(e.target.value) })} required
-                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/30" />
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500/20 transition-all" />
             </div>
           </div>
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Description</label>
             <textarea rows={2} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} maxLength={1000}
               placeholder="Brand, model, serial number, etc."
-              className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/30" />
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 resize-none focus:outline-none focus:ring-1 focus:ring-cyan-500/20 transition-all" />
           </div>
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Condition Notes</label>
             <input value={form.conditionNotes} onChange={e => setForm({ ...form, conditionNotes: e.target.value })} maxLength={500}
               placeholder="e.g. Minor scratches on body"
-              className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/30" />
+              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 transition-all" />
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
@@ -166,16 +167,19 @@ export default function ItemsPage() {
       {/* ── Filters ── */}
       <div className="flex gap-2">
         <div className="relative flex-1">
-          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={12} />
+          <FaSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none transition-colors group-focus-within:text-cyan-400" size={12} />
           <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }}
             placeholder="Search items..."
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-900 border border-white/5 rounded-xl text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 transition-all" />
+            className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/20 transition-all" />
         </div>
-        <select value={category} onChange={e => { setCategory(e.target.value); setPage(1); }}
-          className="px-3 py-2.5 bg-gray-900 border border-white/5 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/30 appearance-none">
-          <option value="">All Categories</option>
-          {CATEGORIES.map(c => <option key={c} value={c}>{CAT_LABEL[c]}</option>)}
-        </select>
+        <Select
+          value={category}
+          onChange={e => { setCategory(e.target.value); setPage(1); }}
+          className="w-auto min-w-[140px]"
+        >
+          <option value="" className="bg-gray-900 text-white">All Categories</option>
+          {CATEGORIES.map(c => <option key={c} value={c} className="bg-gray-900 text-white">{CAT_LABEL[c]}</option>)}
+        </Select>
       </div>
 
       {/* ── Table ── */}

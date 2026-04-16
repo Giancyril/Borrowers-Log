@@ -81,7 +81,7 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
                 type={type}
                 value={(form as any)[key]}
                 onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all"
               />
             </div>
           ))}
@@ -90,13 +90,13 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Due Date</label>
               <input type="date" value={form.dueDate}
                 onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
-                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
             </div>
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Quantity</label>
               <input type="number" min={1} value={form.quantityBorrowed}
                 onChange={e => setForm(f => ({ ...f, quantityBorrowed: Number(e.target.value) }))}
-                className="w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30" />
+                className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all" />
             </div>
           </div>
           <div className="flex gap-2 pt-1">

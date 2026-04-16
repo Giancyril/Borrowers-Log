@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 
 const inputCls =
-  "w-full px-4 py-2.5 bg-gray-800 border border-white/8 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all";
+  "w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-blue-500/20 transition-all";
 const labelCls =
   "block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5";
 
