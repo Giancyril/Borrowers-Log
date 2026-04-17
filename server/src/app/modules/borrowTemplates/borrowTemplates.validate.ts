@@ -6,7 +6,7 @@ export const createBorrowTemplateSchema = z.object({
   borrowerEmail:      z.string().email().optional().or(z.literal("")).default(""),
   borrowerDepartment: z.string().max(100).optional().default(""),
   purpose:            z.string().max(500).optional().default(""),
-  conditionOnBorrow:  z.string().max(300).optional().default(""),
+  conditionOnBorrow:  z.enum(["GOOD", "MINOR", "BAD"]).optional().default("GOOD"),
   dueOffsetDays:      z.number().int().min(1).max(365).default(7),
 });
 

@@ -14,10 +14,9 @@ export const createBorrowRecordSchema = z.object({
   borrowerName:       z.string().min(1, "Borrower name is required").max(100),
   borrowerEmail:      z.string().email().optional().or(z.literal("")).default(""),
   borrowerDepartment: z.string().max(100).optional().default(""),
-  purpose:            z.string().max(500).optional().default(""),
   borrowDate:         z.string().or(z.date()),
   dueDate:            z.string().or(z.date()),
-  conditionOnBorrow:  z.string().max(300).optional().default(""),
+  conditionOnBorrow:  z.enum(["GOOD", "MINOR", "BAD"]).optional().default("GOOD"),
   borrowSignature:    signatureSchema,
 }).refine(
   (d) => new Date(d.dueDate) >= new Date(d.borrowDate),
@@ -34,9 +33,8 @@ export const updateBorrowRecordSchema = z.object({
   borrowerName:       z.string().min(1).max(100).optional(),
   borrowerEmail:      z.string().email().optional(),
   borrowerDepartment: z.string().max(100).optional(),
-  purpose:            z.string().max(500).optional(),
   dueDate:            z.string().or(z.date()).optional(),
-  conditionOnBorrow:  z.string().max(300).optional(),
+  conditionOnBorrow:  z.enum(["GOOD", "MINOR", "BAD"]).optional(),
   quantityBorrowed:   z.number().int().min(1).optional(),
 });
 

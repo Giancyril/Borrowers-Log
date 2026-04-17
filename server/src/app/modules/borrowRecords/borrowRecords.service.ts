@@ -42,10 +42,9 @@ const createRecord = async (data: CreateBorrowRecordInput, adminId: string) => {
       borrowerName:       data.borrowerName,
       borrowerEmail:      data.borrowerEmail ?? "",
       borrowerDepartment: data.borrowerDepartment ?? "",
-      purpose:            data.purpose ?? "",
       borrowDate:         new Date(data.borrowDate),
       dueDate:            new Date(data.dueDate),
-      conditionOnBorrow:  data.conditionOnBorrow ?? "",
+      conditionOnBorrow:  (data.conditionOnBorrow as any) ?? "GOOD",
       borrowSignature:    data.borrowSignature,
       processedById:      adminId,
       status:             "ACTIVE",
@@ -91,7 +90,6 @@ const getRecords = async (query: Record<string, any>) => {
     where.OR = [
       { borrowerName:  { contains: search, mode: "insensitive" } },
       { borrowerEmail: { contains: search, mode: "insensitive" } },
-      { purpose:       { contains: search, mode: "insensitive" } },
       { item: { name:  { contains: search, mode: "insensitive" } } },
     ];
   }
@@ -109,7 +107,6 @@ const getRecords = async (query: Record<string, any>) => {
       take:    limit,
       orderBy: { createdAt: "desc" },
       include: {
-        item:        { select: { id: true, name: true, category: true } },
         processedBy: { select: { id: true, name: true, username: true } },
       },
     }),
@@ -146,12 +143,14 @@ const updateRecord = async (id: string, data: UpdateBorrowRecordInput, adminId?:
       ...(data.borrowerName       && { borrowerName:       data.borrowerName }),
       ...(data.borrowerEmail      && { borrowerEmail:      data.borrowerEmail }),
       ...(data.borrowerDepartment && { borrowerDepartment: data.borrowerDepartment }),
-      ...(data.purpose            && { purpose:            data.purpose }),
       ...(data.dueDate            && { dueDate:            new Date(data.dueDate) }),
       ...(data.quantityBorrowed   && { quantityBorrowed:   data.quantityBorrowed }),
-      ...(data.conditionOnBorrow  && { conditionOnBorrow:  data.conditionOnBorrow }),
+      ...(data.conditionOnBorrow  && { conditionOnBorrow:  data.conditionOnBorrow as any }),
     },
-    include: { item: { select: { id: true, name: true, category: true } } },
+    include: { 
+      item: { select: { id: true, name: true, category: true } },
+      processedBy: { select: { id: true, name: true, username: true } }
+    },
   });
 
   if (adminId) {
@@ -164,7 +163,7 @@ const updateRecord = async (id: string, data: UpdateBorrowRecordInput, adminId?:
       entityType: "BorrowRecord",
       entityId:   updated.id,
       entityName: updated.borrowerName,
-      details:    `Updated record for "${updated.item?.name}"`,
+      details:    `Updated record for "${updated.item?.name || 'Unknown item'}"`,
       adminId,
       adminName:  admin?.name || admin?.username,
     });
@@ -202,7 +201,7 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
     data: {
       status:            "RETURNED",
       actualReturnDate:  new Date(),
-      conditionOnReturn: data.conditionOnReturn ?? "",
+      conditionOnReturn: data.conditionOnReturn ? (data.conditionOnReturn as any) : null,
       damageNotes:       data.damageNotes ?? "",
       returnSignature:   data.returnSignature,
     },
@@ -218,9 +217,9 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
     entityType: "BorrowRecord",
     entityId:   updated.id,
     entityName: updated.borrowerName,
-    details:    `Returned "${updated.item?.name}"${hasDamage ? " — with damage reported" : ""}`,
+    details:    `Returned "${updated.item?.name || 'Unknown item'}"${hasDamage ? " — with damage reported" : ""}`,
     adminId:    updated.processedById ?? undefined,
-    adminName:  updated.processedBy?.name || updated.processedBy?.username,
+    adminName:  updated.processedById ? (await prisma.user.findUnique({ where: { id: updated.processedById }, select: { name: true, username: true } }))?.name || (await prisma.user.findUnique({ where: { id: updated.processedById }, select: { name: true, username: true } }))?.username : undefined,
   });
 
   // ── Damage flag log ───────────────────────────────────────────────────────
@@ -232,7 +231,7 @@ const returnRecord = async (id: string, data: ReturnBorrowRecordInput) => {
       entityName: record.item?.name,
       details:    `⚠️ DAMAGE REPORTED — "${record.item?.name}" returned damaged by ${updated.borrowerName}. Notes: ${data.damageNotes}`,
       adminId:    updated.processedById ?? undefined,
-      adminName:  updated.processedBy?.name || updated.processedBy?.username,
+      adminName: updated.processedById ? (await prisma.user.findUnique({ where: { id: updated.processedById }, select: { name: true, username: true } }))?.name || (await prisma.user.findUnique({ where: { id: updated.processedById }, select: { name: true, username: true } }))?.username : undefined,
     });
   }
 

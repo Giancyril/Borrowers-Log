@@ -26,12 +26,11 @@ export const approveRequest = async (id: string) => {
   await prisma.borrowRecord.create({
   data: {
     itemId: request.itemId,
-    quantityBorrowed: request.quantityRequested, // ✅ FIXED
+    quantityBorrowed: request.quantityRequested, // 
 
     borrowerName: request.borrowerName,
     borrowerEmail: request.borrowerEmail,
     borrowerDepartment: request.borrowerDepartment,
-    purpose: request.purpose,
 
     borrowDate: new Date(),
     dueDate: request.neededUntil,
