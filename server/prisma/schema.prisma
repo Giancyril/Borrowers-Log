@@ -45,6 +45,12 @@ enum RequestStatus {
   REJECTED
 }
 
+enum ItemCondition {
+  GOOD
+  MINOR
+  BAD
+}
+
 model ActivityLog {
   id         String         @id @default(uuid())
   action     ActivityAction
@@ -107,7 +113,6 @@ model BorrowRecord {
   borrowerName       String
   borrowerEmail      String @default("")
   borrowerDepartment String @default("")
-  purpose            String @default("")
 
   // Dates
   borrowDate       DateTime
@@ -118,8 +123,8 @@ model BorrowRecord {
   status BorrowStatus @default(ACTIVE)
 
   // Condition
-  conditionOnBorrow String @default("")
-  conditionOnReturn String @default("")
+  conditionOnBorrow ItemCondition @default(GOOD)
+  conditionOnReturn ItemCondition?
   damageNotes       String @default("")
 
   // E-signatures
@@ -148,7 +153,6 @@ model BorrowRequest {
   borrowerName       String
   borrowerEmail      String @default("")
   borrowerDepartment String @default("")
-  purpose            String @default("")
   notes              String @default("")
 
   itemId String
@@ -188,8 +192,7 @@ model BorrowTemplate {
   borrowerName       String   @default("")
   borrowerEmail      String   @default("")
   borrowerDepartment String   @default("")
-  purpose            String   @default("")
-  conditionOnBorrow  String   @default("")
+  conditionOnBorrow  ItemCondition @default(GOOD)
   dueOffsetDays      Int      @default(7)
   createdById        String
   createdBy          User     @relation(fields: [createdById], references: [id])

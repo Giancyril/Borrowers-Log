@@ -1,5 +1,6 @@
 export type ItemCategory = "EQUIPMENT" | "BOOKS" | "OFFICE_SUPPLIES" | "OTHER";
 export type BorrowStatus = "ACTIVE" | "RETURNED" | "OVERDUE";
+export type ItemCondition = "GOOD" | "MINOR" | "BAD";
 
 export interface Item {
   id: string;
@@ -24,7 +25,6 @@ export interface BorrowRecord {
   borrowerName: string;
   borrowerEmail: string;
   borrowerDepartment: string;
-  purpose: string;
   borrowDate: string;
   dueDate: string;
   actualReturnDate: string | null;
@@ -113,7 +113,6 @@ export interface BorrowTemplate {
   borrowerName:       string;
   borrowerEmail:      string;
   borrowerDepartment: string;
-  purpose:            string;
   conditionOnBorrow:  string;
   dueOffsetDays:      number;
   createdById:        string;

@@ -14,7 +14,8 @@ import {
   FaCheckCircle, FaExclamationTriangle, FaEdit, FaPrint, FaUser, FaRedo,
 } from "react-icons/fa";
 import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
-import type { BorrowRecord } from "../../types/types";
+import { Select } from "../../components/ui/Select";
+import type { BorrowRecord, ItemCondition } from "../../types/types";
 import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { useConfirm } from "../../hooks/useConfirm";
 
@@ -41,7 +42,6 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
     borrowerName:       record.borrowerName,
     borrowerEmail:      record.borrowerEmail,
     borrowerDepartment: record.borrowerDepartment,
-    purpose:            record.purpose,
     dueDate:            record.dueDate?.slice(0, 10) ?? "",
     quantityBorrowed:   record.quantityBorrowed,
   });
@@ -74,7 +74,6 @@ function EditModal({ record, onClose }: { record: BorrowRecord; onClose: () => v
             { label: "Borrower Name", key: "borrowerName",       type: "text"  },
             { label: "Email",         key: "borrowerEmail",      type: "email" },
             { label: "Department",    key: "borrowerDepartment", type: "text"  },
-            { label: "Purpose",       key: "purpose",            type: "text"  },
           ].map(({ label, key, type }) => (
             <div key={key}>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">{label}</label>
@@ -143,8 +142,8 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-gray-900 border border-white/10 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl max-h-[92vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">
           <div>
             <h3 className="text-sm font-bold text-white">Process Return</h3>
@@ -157,9 +156,15 @@ function ReturnModal({ record, onClose }: { record: BorrowRecord; onClose: () =>
         <div className="p-5 space-y-4 overflow-y-auto">
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Condition on Return</label>
-            <input value={conditionOnReturn} onChange={e => setCondition(e.target.value)}
-              placeholder="e.g. Good condition, no damage"
-              className="w-full px-4 py-2.5 bg-white/5 border border-white/10 rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/20 transition-all" />
+            <Select
+              value={conditionOnReturn}
+              onChange={e => setCondition(e.target.value)}
+            >
+              <option value="" className="bg-gray-900 text-white">Select condition</option>
+              <option value="GOOD" className="bg-gray-900 text-white">Good</option>
+              <option value="MINOR" className="bg-gray-900 text-white">Minor Issues</option>
+              <option value="BAD" className="bg-gray-900 text-white">Bad Condition</option>
+            </Select>
           </div>
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Damage Notes</label>
@@ -270,8 +275,7 @@ const printSlip = (record: BorrowRecord) => {
         <tr><td>Name</td><td>${record.borrowerName}</td></tr>
         <tr><td>Email</td><td>${record.borrowerEmail || "—"}</td></tr>
         <tr><td>Department</td><td>${record.borrowerDepartment || "—"}</td></tr>
-        <tr><td>Purpose</td><td>${record.purpose || "—"}</td></tr>
-      </tbody></table>
+              </tbody></table>
       <p class="section-title">Item Details</p>
       <table><tbody>
         <tr><td>Item</td><td>${record.item?.name}</td></tr>
@@ -349,7 +353,6 @@ export default function BorrowRecordDetail() {
       borrowerName:       record.borrowerName,
       borrowerEmail:      record.borrowerEmail      ?? "",
       borrowerDepartment: record.borrowerDepartment ?? "",
-      purpose:            record.purpose            ?? "",
       itemId:             record.itemId,
       quantity:           String(record.quantityBorrowed),
     });
@@ -449,7 +452,6 @@ export default function BorrowRecordDetail() {
             ["Name",       record.borrowerName],
             ["Email",      record.borrowerEmail      || "—"],
             ["Department", record.borrowerDepartment || "—"],
-            ["Purpose",    record.purpose            || "—"],
           ].map(([k, v]) => (
             <div key={k}>
               <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">{k}</p>

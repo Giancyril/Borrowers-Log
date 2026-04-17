@@ -76,7 +76,6 @@ export default function BorrowRequestsPage() {
       borrowerName: req.borrowerName,
       borrowerEmail: req.borrowerEmail ?? "",
       borrowerDepartment: req.borrowerDepartment ?? "",
-      purpose: req.purpose ?? "",
       itemId: req.itemId,
       quantity: String(req.quantityRequested),
       dueDate: req.neededUntil ?? "",

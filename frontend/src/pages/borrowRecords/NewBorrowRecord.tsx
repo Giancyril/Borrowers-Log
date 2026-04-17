@@ -141,9 +141,6 @@ function TemplateDrawer({
                       Due in {t.dueOffsetDays} day{t.dueOffsetDays !== 1 ? "s" : ""}
                     </span>
                   </div>
-                  {t.purpose && (
-                    <p className="text-[10px] text-gray-600 mt-1 truncate">{t.purpose}</p>
-                  )}
                 </div>
                 <button
                   onClick={(e) => handleDelete(t.id, t.name, e)}
@@ -254,7 +251,6 @@ export default function NewBorrowRecord() {
     borrowerName:       searchParams.get("borrowerName")       ?? "",
     borrowerEmail:      searchParams.get("borrowerEmail")      ?? "",
     borrowerDepartment: searchParams.get("borrowerDepartment") ?? "",
-    purpose:            searchParams.get("purpose")            ?? "",
   });
 
   const [cart, setCart] = useState<CartItem[]>([{
@@ -262,7 +258,7 @@ export default function NewBorrowRecord() {
     quantityBorrowed: Number(searchParams.get("quantity")) || 1,
     borrowDate:       todayStr(),
     dueDate:          searchParams.get("dueDate") ?? todayStr(),
-    conditionOnBorrow: "",
+    conditionOnBorrow: "GOOD",
   }]);
 
   const { data: itemsData } = useGetItemsQuery({ limit: 100 });
@@ -283,7 +279,7 @@ export default function NewBorrowRecord() {
   const addCartRow = () =>
     setCart(c => [...c, {
       itemId: "", quantityBorrowed: 1,
-      borrowDate: todayStr(), dueDate: todayStr(), conditionOnBorrow: "",
+      borrowDate: todayStr(), dueDate: todayStr(), conditionOnBorrow: "GOOD",
     }]);
 
   const removeCartRow = (idx: number) =>
@@ -303,7 +299,6 @@ export default function NewBorrowRecord() {
       borrowerName:       t.borrowerName,
       borrowerEmail:      t.borrowerEmail,
       borrowerDepartment: t.borrowerDepartment,
-      purpose:            t.purpose,
     });
     setCart(c => c.map(row => ({
       ...row,
@@ -322,7 +317,6 @@ export default function NewBorrowRecord() {
         borrowerName:       borrowerForm.borrowerName,
         borrowerEmail:      borrowerForm.borrowerEmail,
         borrowerDepartment: borrowerForm.borrowerDepartment,
-        purpose:            borrowerForm.purpose,
         conditionOnBorrow:  cart[0]?.conditionOnBorrow ?? "",
       }).unwrap();
       toast.success(`Template "${name}" saved`);
@@ -336,12 +330,12 @@ export default function NewBorrowRecord() {
   const [shouldFetchByDetails, setShouldFetchByDetails] = useState(false);
   const { data: studentByDetails, isFetching: isFetchingByDetails, error: fetchDetailsError } = useGetStudentByDetailsQuery(
     { name: borrowerForm.borrowerName, email: borrowerForm.borrowerEmail },
-    { skip: !shouldFetchByDetails || !borrowerForm.borrowerName || !borrowerForm.borrowerEmail }
+    { skip: !shouldFetchByDetails || (!borrowerForm.borrowerName && !borrowerForm.borrowerEmail) }
   );
 
   const handleFetchDetails = async () => {
-    if (!borrowerForm.borrowerName || !borrowerForm.borrowerEmail) {
-      toast.warn("Please enter both Name and Email to fetch info.");
+    if (!borrowerForm.borrowerName && !borrowerForm.borrowerEmail) {
+      toast.warn("Please enter either Name or Email to fetch info.");
       return;
     }
     setShouldFetchByDetails(true);
@@ -392,7 +386,7 @@ export default function NewBorrowRecord() {
   const clearScan = () => {
     setScannedStudent(null);
     scannedAtRef.current = "";
-    setBorrowerForm({ borrowerName: "", borrowerEmail: "", borrowerDepartment: "", purpose: "" });
+    setBorrowerForm({ borrowerName: "", borrowerEmail: "", borrowerDepartment: "" });
   };
 
   // ── Validation ────────────────────────────────────────────────────────────
@@ -459,7 +453,6 @@ export default function NewBorrowRecord() {
               borrowDate:       rec.borrowDate,
               dueDate:          rec.dueDate,
               status:           "ACTIVE",
-              purpose:          borrowerForm.purpose,
               conditionOnBorrow: rec.conditionOnBorrow,
               scannedAt:        scannedAtRef.current,
               recordId:         rec.id,
@@ -490,7 +483,6 @@ export default function NewBorrowRecord() {
           borrowDate:       rec.borrowDate,
           dueDate:          rec.dueDate,
           status:           "ACTIVE",
-          purpose:          borrowerForm.purpose,
           conditionOnBorrow: rec.conditionOnBorrow,
           scannedAt:        scannedAtRef.current,
           recordId:         rec.id,
@@ -655,13 +647,6 @@ export default function NewBorrowRecord() {
                   placeholder=" " className={inputCls} />
               </div>
             </div>
-            <div>
-              <label className={labelCls}>Purpose</label>
-              <textarea rows={2} value={borrowerForm.purpose}
-                onChange={e => setBorrower("purpose", e.target.value)}
-                placeholder="e.g. Class presentation in Room 203"
-                className={`${inputCls} resize-none`} />
-            </div>
           </div>
         )}
 
@@ -728,9 +713,14 @@ export default function NewBorrowRecord() {
                   </div>
                   <div>
                     <label className={labelCls}>Condition on Borrow</label>
-                    <input value={row.conditionOnBorrow}
+                    <Select
+                      value={row.conditionOnBorrow}
                       onChange={e => setCartRow(idx, "conditionOnBorrow", e.target.value)}
-                      placeholder="e.g. Good condition" className={inputCls} />
+                    >
+                      <option value="GOOD" className="bg-gray-900 text-white">Good</option>
+                      <option value="MINOR" className="bg-gray-900 text-white">Minor Issues</option>
+                      <option value="BAD" className="bg-gray-900 text-white">Bad Condition</option>
+                    </Select>
                   </div>
                 </div>
               );

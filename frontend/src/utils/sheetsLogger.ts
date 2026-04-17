@@ -27,9 +27,8 @@
  *  H  Borrow Date
  *  I  Due Date
  *  J  Status
- *  K  Purpose
  *  L  Condition on Borrow
- *  M  Scanned At           ← new: ISO timestamp of when scanner captured the student
+ *  M  Scanned At           ← new: ISO timestamp of when scanner captured student
  *  N  Record ID            ← new: links back to your system
  *
  * Set up the header row manually in the sheet (Row 1).
@@ -45,7 +44,6 @@ export interface SheetRowPayload {
   borrowDate:        string;
   dueDate:           string;
   status:            string;
-  purpose:           string;
   conditionOnBorrow: string;
   scannedAt:         string; // ISO string — time the barcode was scanned
   recordId:          string; // borrow record ID from your backend
@@ -74,10 +72,9 @@ export async function logToSheet(payload: SheetRowPayload): Promise<void> {
     payload.borrowDate,                    // H: Borrow Date
     payload.dueDate,                       // I: Due Date
     payload.status,                        // J: Status
-    payload.purpose,                       // K: Purpose
-    payload.conditionOnBorrow,             // L: Condition on Borrow
-    payload.scannedAt,                     // M: Scanned At
-    payload.recordId,                      // N: Record ID
+    payload.conditionOnBorrow,             // K: Condition on Borrow
+    payload.scannedAt,                     // L: Scanned At
+    payload.recordId,                      // M: Record ID
   ];
 
   try {
@@ -109,15 +106,15 @@ function doPost(e) {
     var row   = data.row;
     var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Sheet1");
 
-    // Auto-add header row if the sheet is empty
+    // Auto-add header row if sheet is empty
     if (sheet.getLastRow() === 0) {
       sheet.appendRow([
         "Timestamp", "Student ID", "Borrower Name", "Department / Section",
         "Email", "Item Name", "Qty", "Borrow Date", "Due Date",
-        "Status", "Purpose", "Condition on Borrow", "Scanned At", "Record ID"
+        "Status", "Condition on Borrow", "Scanned At", "Record ID"
       ]);
       // Style header
-      var header = sheet.getRange(1, 1, 1, 14);
+      var header = sheet.getRange(1, 1, 1, 12);
       header.setFontWeight("bold");
       header.setBackground("#1a1a2e");
       header.setFontColor("#ffffff");

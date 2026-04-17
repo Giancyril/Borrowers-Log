@@ -23,7 +23,6 @@ export default function BorrowRequestForm() {
     borrowerName: "",
     borrowerEmail: "",
     borrowerDepartment: "",
-    purpose: "",
     itemId: "",
     quantityRequested: 1,
     requestedDate: todayStr(),
@@ -42,12 +41,12 @@ export default function BorrowRequestForm() {
   const [shouldFetchByDetails, setShouldFetchByDetails] = useState(false);
   const { data: studentByDetails, isFetching: isFetchingByDetails, error: fetchDetailsError } = useGetStudentByDetailsQuery(
     { name: form.borrowerName, email: form.borrowerEmail },
-    { skip: !shouldFetchByDetails || !form.borrowerName || !form.borrowerEmail }
+    { skip: !shouldFetchByDetails || (!form.borrowerName && !form.borrowerEmail) }
   );
 
   const handleFetchDetails = () => {
-    if (!form.borrowerName || !form.borrowerEmail) {
-      toast.warn("Please enter both Name and Email to fetch info.");
+    if (!form.borrowerName && !form.borrowerEmail) {
+      toast.warn("Please enter either Name or Email to fetch info.");
       return;
     }
     setShouldFetchByDetails(true);
@@ -129,7 +128,6 @@ export default function BorrowRequestForm() {
                 borrowerName: "",
                 borrowerEmail: "",
                 borrowerDepartment: "",
-                purpose: "",
                 itemId: "",
                 quantityRequested: 1,
                 requestedDate: todayStr(),
@@ -208,17 +206,6 @@ export default function BorrowRequestForm() {
                 className={inputCls}
               />
             </div>
-          </div>
-
-          <div>
-            <label className={labelCls}>Purpose *</label>
-            <textarea
-              rows={1}
-              value={form.purpose}
-              onChange={(e) => set("purpose", e.target.value)}
-              placeholder="e.g. Class presentation in Room 203"
-              className={`${inputCls} resize-none`}
-            />
           </div>
 
           {/* Item Selection */}

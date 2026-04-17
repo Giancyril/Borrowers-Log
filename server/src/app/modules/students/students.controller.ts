@@ -28,10 +28,10 @@ const getStudentById = async (req: Request, res: Response, next: NextFunction) =
 const getStudentByDetails = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, email } = req.query;
-    if (!name || !email) {
+    if (!name && !email) {
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Student name and email are required to search.",
+        message: "Either student name or email is required to search.",
       });
     }
 
@@ -40,7 +40,7 @@ const getStudentByDetails = async (req: Request, res: Response, next: NextFuncti
     sendResponse(res, {
       statusCode: StatusCodes.OK,
       success:    true,
-      message:    "Student info fetched by name and email successfully",
+      message:    "Student info fetched successfully",
       data:       result,
     });
   } catch (err) {

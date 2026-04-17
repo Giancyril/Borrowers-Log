@@ -191,10 +191,15 @@ const api = baseApi.injectEndpoints({
       query: (id: string) => `/students/${id}`,
     }),
     getStudentByDetails: build.query({
-      query: ({ name, email }: { name: string; email: string }) => ({
-        url: "/students/search",
-        params: { name, email },
-      }),
+      query: ({ name, email }: { name: string; email: string }) => {
+        const params: any = {};
+        if (name) params.name = name;
+        if (email) params.email = email;
+        return {
+          url: "/students/search",
+          params,
+        };
+      },
     }),
 
     // ── Notifications (polls activity-logs, last 15, every 30s) ──────────

@@ -1,19 +1,3 @@
-/**
- * BarcodeScannerModal.tsx
- *
- * BARCODE FORMAT (preferred — embed this in your QR codes):
- *   {"id":"20232271","name":"Juan dela Cruz","department":"BSCS","email":"juan@nbsc.edu.ph"}
- *
- * FALLBACK FORMATS (for older/incomplete barcodes):
- *   Pipe-delimited: 20232271|Juan dela Cruz|BSCS|juan@nbsc.edu.ph
- *   ID only:        20232271  → email auto-generated as 20232271@nbsc.edu.ph
- *
- * EMAIL RESOLUTION PRIORITY:
- *   1. Email embedded in barcode JSON
- *   2. Email returned by DB lookup (useGetStudentByIdQuery)
- *   3. Auto-generated: {studentId}@nbsc.edu.ph
- */
-
 import { useEffect, useRef, useState, useCallback } from "react";
 import {
   FaTimes, FaQrcode, FaCheck, FaExclamationTriangle,
@@ -55,13 +39,17 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
     try {
       const obj  = JSON.parse(text);
       const name = obj.name || obj.borrowerName || obj.fullName || "";
-      if (!name) return null;
+      const email = obj.email || obj.borrowerEmail || "";
       const id   = String(obj.id || obj.studentId || obj.student_id || "");
+      
+      // Accept if we have either name OR school email
+      if (!name && !email) return null;
+      
       return {
         id,
-        name,
+        name: name || "Unknown Student",
         department: obj.department || obj.dept || obj.borrowerDepartment || "",
-        email:      obj.email || obj.borrowerEmail || autoEmail(id),
+        email: email || autoEmail(id),
         raw:        text,
       };
     } catch {
@@ -101,9 +89,14 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
 
   const cleanName = remainder.replace(/^[,\-\s]+|[,\-\s]+$/g, "").trim();
 
+  // Accept if we have either name OR email
+  if (!cleanName && !extractedEmail) {
+    return null;
+  }
+
   return {
     id:         extractedId,
-    name:       cleanName || extractedId || text,
+    name:       cleanName || "Unknown Student",
     department: "",
     email:      extractedEmail || autoEmail(extractedId),
     raw:        text,
@@ -244,6 +237,7 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
   const videoRef  = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<any>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isDecodingRef = useRef(false);
 
   const [phase,      setPhase]      = useState<"scanning" | "result" | "error">("scanning");
   const [parsed,     setParsed]     = useState<ScannedStudent | null>(null);
@@ -256,14 +250,30 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
 
   // ── Stop camera & decoder ──────────────────────────────────────────────────
   const stopAll = useCallback(() => {
-    try { readerRef.current?.reset(); } catch { /* ignore */ }
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
+    isDecodingRef.current = false;
+    try { 
+      if (readerRef.current) {
+        readerRef.current.reset();
+        readerRef.current = null;
+      }
+    } catch { /* ignore */ }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => {
+        t.stop();
+        streamRef.current?.removeTrack(t);
+      });
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
   }, []);
 
   // ── Start ZXing decode loop ────────────────────────────────────────────────
   const startDecoding = useCallback(async (mode?: "environment" | "user") => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isDecodingRef.current) return;
+    
+    isDecodingRef.current = true;
     setScanning(false);
 
     try {
@@ -273,18 +283,29 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
       );
 
       stopAll();
+      
+      // Wait a bit for cleanup
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
       const targetMode = mode ?? facingMode;
 
+      const constraints = {
+        video: {
+          facingMode: targetMode,
+        }
+      };
+
       await reader.decodeFromConstraints(
-        { video: { facingMode: targetMode } },
+        constraints,
         videoRef.current,
         (result: any, err: any) => {
+          if (!isDecodingRef.current) return;
+          
           setScanning(true);
           if (result) {
-            const raw    = result.getText();
+            const raw = result.getText();
             const student = parseBarcodeText(raw);
             if (student) {
               stopAll();
@@ -305,13 +326,14 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
           : e?.message ?? "Unable to start the camera."
       );
       setPhase("error");
+      isDecodingRef.current = false;
     }
   }, [facingMode, stopAll]);
 
   useEffect(() => {
     startDecoding();
     return () => { stopAll(); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const switchCamera = (mode: "environment" | "user") => {
     setFacingMode(mode);
@@ -340,11 +362,14 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
 
   return (
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
           <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+              <FaQrcode size={13} className="text-blue-400" />
+            </div>
             <div>
               <h3 className="text-sm font-bold text-white">Scan Student ID</h3>
               <p className="text-[10px] text-gray-500">Point camera at barcode or QR code</p>
@@ -365,7 +390,15 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
           {phase === "scanning" && (
             <div className="space-y-4">
               <div className="relative bg-black rounded-2xl overflow-hidden aspect-[3/4] sm:aspect-video flex items-center justify-center">
-                <video ref={videoRef} className="w-full h-full object-cover" muted playsInline autoPlay />
+                <video 
+                  ref={videoRef} 
+                  className="w-full h-full object-cover" 
+                  muted 
+                  playsInline 
+                  autoPlay
+                  onPlay={() => console.log('Video playing successfully')}
+                  onError={(e) => console.error('Video error:', e)}
+                />
 
                 {scanning && (
                   <>
@@ -377,7 +410,7 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
                         <div
                           className="absolute left-2 right-2 h-px bg-blue-400/70"
                           style={{
-                            animation: "scanline 2s ease-in-out infinite",
+                            animation: "scanline 1s ease-in-out infinite",
                             boxShadow: "0 0 8px 2px rgba(96,165,250,0.4)",
                           }}
                         />

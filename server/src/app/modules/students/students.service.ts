@@ -124,23 +124,42 @@ const getStudentByDetails = async (name: string, email: string) => {
     const rowEmail = (row[1] || "").toLowerCase().trim();
     const rowName  = (row[2] || "").toLowerCase().trim();
     
-    // 1. Email/ID Match (Highest Priority)
-    const emailMatch = rowEmail === searchEmail || 
-                       rowEmail === searchId || 
-                       rowId === searchId || 
-                       rowId === searchEmail;
-    
-    if (!emailMatch) return false;
+    // If searching by both name and email, require both to match
+    if (searchName && searchEmail) {
+      const emailMatch = rowEmail === searchEmail || 
+                         rowEmail === searchId || 
+                         rowId === searchId || 
+                         rowId === searchEmail;
+      
+      if (!emailMatch) return false;
 
-    // 2. Name Match (Lenient)
-    if (!searchName) return true; // If name isn't provided, email match is enough
-
-    const normalizedRowName = normalize(rowName);
+      const normalizedRowName = normalize(rowName);
+      
+      // Match if one contains the other, or if normalized versions match
+      return normalizedRowName.includes(normalizedSearchName) || 
+             normalizedSearchName.includes(normalizedRowName) ||
+             normalizedRowName === normalizedSearchName;
+    }
     
-    // Match if one contains the other, or if normalized versions match
-    return normalizedRowName.includes(normalizedSearchName) || 
-           normalizedSearchName.includes(normalizedRowName) ||
-           normalizedRowName === normalizedSearchName;
+    // If searching by email only, match email/ID
+    if (searchEmail && !searchName) {
+      return rowEmail === searchEmail || 
+             rowEmail === searchId || 
+             rowId === searchId || 
+             rowId === searchEmail;
+    }
+    
+    // If searching by name only, match name
+    if (searchName && !searchEmail) {
+      const normalizedRowName = normalize(rowName);
+      
+      // Match if one contains the other, or if normalized versions match
+      return normalizedRowName.includes(normalizedSearchName) || 
+             normalizedSearchName.includes(normalizedRowName) ||
+             normalizedRowName === normalizedSearchName;
+    }
+    
+    return false;
   });
   
   if (!studentRow) {

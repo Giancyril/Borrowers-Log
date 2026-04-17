@@ -46,7 +46,7 @@ const daysOverdue = (due: string) =>
 const exportCSV = (records: BorrowRecord[]) => {
   const headers = [
     "Borrower Name", "Email", "Department", "Item", "Qty",
-    "Borrow Date", "Due Date", "Return Date", "Status", "Purpose",
+    "Borrow Date", "Due Date", "Return Date", "Status",
     "Condition (Borrow)", "Condition (Return)", "Damage Notes",
   ];
   const rows = records.map(r => [
@@ -54,8 +54,7 @@ const exportCSV = (records: BorrowRecord[]) => {
     r.item?.name, r.quantityBorrowed,
     fmt(r.borrowDate), fmt(r.dueDate),
     r.actualReturnDate ? fmt(r.actualReturnDate) : "",
-    r.status, r.purpose,
-    r.conditionOnBorrow, r.conditionOnReturn, r.damageNotes,
+    r.status, r.conditionOnBorrow, r.conditionOnReturn, r.damageNotes,
   ]);
   const csv = [headers, ...rows]
     .map(row => row.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
