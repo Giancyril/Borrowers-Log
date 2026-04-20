@@ -28,13 +28,14 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
   const text = raw.trim();
   if (!text) return null;
 
+  // 1. JSON format
   if (text.startsWith("{")) {
     try {
       const obj   = JSON.parse(text);
       const name  = obj.name || obj.borrowerName || obj.fullName || "";
       const email = obj.email || obj.borrowerEmail || "";
       const id    = String(obj.id || obj.studentId || obj.student_id || "");
-      if (!name && !email) return null;
+      if (!name && !email && !id) return null;
       return {
         id,
         name:       name || "Unknown Student",
@@ -45,6 +46,7 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
     } catch { /* fall through */ }
   }
 
+  // 2. Pipe-delimited: ID|Name|Department|Email
   const parts = text.split("|").map((p: string) => p.trim());
   if (parts.length >= 2) {
     const id = parts[0] || "";
@@ -57,9 +59,9 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
     };
   }
 
+  // 3. Extract email if present
   let remainder      = text;
   let extractedEmail = "";
-  let extractedId    = "";
 
   const emailMatch = remainder.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
   if (emailMatch) {
@@ -67,20 +69,20 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
     remainder      = remainder.replace(extractedEmail, "").trim();
   }
 
-  const idMatch = remainder.match(/\b(\d{4,}-?\d{2,}|\d{6,})\b/);
-  if (idMatch) {
-    extractedId = idMatch[1];
-    remainder   = remainder.replace(extractedId, "").trim();
-  }
+  // 4. Extract numeric ID if present
+  const idMatch   = remainder.match(/\b(\d{4,})\b/);
+  const extractedId = idMatch ? idMatch[1] : "";
+  if (idMatch) remainder = remainder.replace(idMatch[0], "").trim();
 
   const cleanName = remainder.replace(/^[,\-\s]+|[,\-\s]+$/g, "").trim();
-  if (!cleanName && !extractedEmail) return null;
 
+  // 5. ✅ Accept ANYTHING — even a bare number like "20241521"
+  //    Treat it as student ID, name will be filled from DB lookup
   return {
-    id:         extractedId,
-    name:       cleanName || "Unknown Student",
+    id:         extractedId || text,   // use full raw text as ID if no other ID found
+    name:       cleanName || "",       // empty name — DB lookup will fill it
     department: "",
-    email:      extractedEmail || autoEmail(extractedId),
+    email:      extractedEmail || autoEmail(extractedId || text),
     raw:        text,
   };
 }
