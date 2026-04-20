@@ -76,11 +76,9 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
 
   const cleanName = remainder.replace(/^[,\-\s]+|[,\-\s]+$/g, "").trim();
 
-  // 5. ✅ Accept ANYTHING — even a bare number like "20241521"
-  //    Treat it as student ID, name will be filled from DB lookup
   return {
-    id:         extractedId || text,   // use full raw text as ID if no other ID found
-    name:       cleanName || "",       // empty name — DB lookup will fill it
+    id:         extractedId || text,   
+    name:       cleanName || "",       
     department: "",
     email:      extractedEmail || autoEmail(extractedId || text),
     raw:        text,

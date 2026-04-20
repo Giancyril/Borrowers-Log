@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import {
   FaCheck, FaEraser, FaRedo, FaPlus, FaTrash,
   FaInbox, FaLayerGroup, FaSave, FaQrcode, FaUserCheck,
-  FaSearch, FaSpinner, FaChevronDown
+  FaSearch, FaSpinner, FaChevronDown, FaTimes  
 } from "react-icons/fa";
 import { Select } from "../../components/ui/Select";
 import { CustomDatePicker } from "../../components/ui/CustomDatePicker";
@@ -596,24 +596,27 @@ export default function NewBorrowRecord() {
           <div className="space-y-4">
 
             {scannedStudent && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl">
-                <div className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
-                  <FaUserCheck size={13} className="text-cyan-400" />
+              <div className="flex items-center gap-3 px-4 py-3.5 bg-cyan-500/5 border border-cyan-500/20 rounded-2xl">
+                <div className="w-9 h-9 rounded-full bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
+                  <FaUserCheck size={14} className="text-cyan-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-cyan-300 text-xs font-semibold truncate">{scannedStudent.name}</p>
+                  <p className="text-cyan-300 text-xs font-bold truncate">{scannedStudent.name}</p>
                   {scannedStudent.id && (
-                    <p className="text-gray-500 text-[10px]">ID: {scannedStudent.id}</p>
+                    <p className="text-gray-500 text-[10px] mt-0.5">Student ID: {scannedStudent.id}</p>
                   )}
                 </div>
                 <button
                   onClick={clearScan}
-                  className="text-gray-600 hover:text-gray-300 text-xs transition-colors shrink-0"
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-500 hover:text-gray-300 transition-colors shrink-0"
                   title="Clear scanned data"
-                >✕</button>
+                >
+                  <FaTimes size={10} />
+                </button>
               </div>
             )}
 
+            {/* Borrower Name */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className={labelCls}>Borrower Name *</label>
@@ -628,25 +631,38 @@ export default function NewBorrowRecord() {
                   </button>
                 )}
               </div>
-              <input value={borrowerForm.borrowerName}
+              <input
+                value={borrowerForm.borrowerName}
                 onChange={e => setBorrower("borrowerName", e.target.value)}
-                placeholder=" " className={inputCls} />
+                placeholder=" "
+                className={inputCls}
+              />
               {errors.borrowerName && <p className="text-red-400 text-xs mt-1">{errors.borrowerName}</p>}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Email</label>
-                <input type="email" value={borrowerForm.borrowerEmail}
-                  onChange={e => setBorrower("borrowerEmail", e.target.value)}
-                  placeholder=" " className={inputCls} />
-              </div>
-              <div>
-                <label className={labelCls}>Department</label>
-                <input value={borrowerForm.borrowerDepartment}
-                  onChange={e => setBorrower("borrowerDepartment", e.target.value)}
-                  placeholder=" " className={inputCls} />
-              </div>
+
+            {/* Email — full width so long addresses don't get clipped */}
+            <div>
+              <label className={labelCls}>Email</label>
+              <input
+                type="email"
+                value={borrowerForm.borrowerEmail}
+                onChange={e => setBorrower("borrowerEmail", e.target.value)}
+                placeholder=" "
+                className={inputCls}
+              />
             </div>
+
+            {/* Department — full width, shows long department names properly */}
+            <div>
+              <label className={labelCls}>Department / Course</label>
+              <input
+                value={borrowerForm.borrowerDepartment}
+                onChange={e => setBorrower("borrowerDepartment", e.target.value)}
+                placeholder=" "
+                className={inputCls}
+              />
+            </div>
+
           </div>
         )}
 
