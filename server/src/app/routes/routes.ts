@@ -55,7 +55,7 @@ router.put   ("/borrow-records/:id/return", auth(), borrowRecordsController.retu
 router.delete("/borrow-records/:id",      auth(), borrowRecordsController.deleteRecord);
 
 router.get("/activity-logs", auth(), activityLogController.getLogs);
-router.delete("/activity-logs", auth, activityLogController.clearAll);
+router.delete("/activity-logs", auth(), activityLogController.clearAll);
 
 // ── Borrow Templates ──────────────────────────────────────────────────────────
 router.get   ("/borrow-templates",     auth(), borrowTemplatesController.getTemplates);

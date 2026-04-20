@@ -4,10 +4,8 @@ import {
   FaCamera, FaSync, FaUserCheck, FaSpinner,
 } from "react-icons/fa";
 
-// ─── Change this to match your school's email domain ─────────────────────────
 const EMAIL_DOMAIN = "nbsc.edu.ph";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 export interface ScannedStudent {
   id:         string;
   name:       string;
@@ -17,15 +15,11 @@ export interface ScannedStudent {
 }
 
 interface Props {
-  onScan:  (student: ScannedStudent) => void;
-  onClose: () => void;
-  /** Optional: pass your RTK Query hook to enrich scan data from the DB.
-   *  Signature: (studentId: string) => { data?: any; isLoading: boolean }
-   *  If omitted, the modal falls back to auto-generated email only. */
+  onScan:           (student: ScannedStudent) => void;
+  onClose:          () => void;
   useFetchStudent?: (id: string) => { data?: any; isFetching: boolean };
 }
 
-// ── Email helpers ─────────────────────────────────────────────────────────────
 const autoEmail = (id: string) =>
   id ? `${id.replace(/\s+/g, "")}@${EMAIL_DOMAIN}` : "";
 
@@ -34,31 +28,24 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
   const text = raw.trim();
   if (!text) return null;
 
-  // 1. JSON format (preferred)
   if (text.startsWith("{")) {
     try {
-      const obj  = JSON.parse(text);
-      const name = obj.name || obj.borrowerName || obj.fullName || "";
+      const obj   = JSON.parse(text);
+      const name  = obj.name || obj.borrowerName || obj.fullName || "";
       const email = obj.email || obj.borrowerEmail || "";
-      const id   = String(obj.id || obj.studentId || obj.student_id || "");
-      
-      // Accept if we have either name OR school email
+      const id    = String(obj.id || obj.studentId || obj.student_id || "");
       if (!name && !email) return null;
-      
       return {
         id,
-        name: name || "Unknown Student",
+        name:       name || "Unknown Student",
         department: obj.department || obj.dept || obj.borrowerDepartment || "",
-        email: email || autoEmail(id),
+        email:      email || autoEmail(id),
         raw:        text,
       };
-    } catch {
-      // fall through
-    }
+    } catch { /* fall through */ }
   }
 
-  // 2. Pipe-delimited: ID|Name|Department|Email
-  const parts = text.split("|").map(p => p.trim());
+  const parts = text.split("|").map((p: string) => p.trim());
   if (parts.length >= 2) {
     const id = parts[0] || "";
     return {
@@ -70,15 +57,14 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
     };
   }
 
-  // 3. Smart extraction for plain/unformatted text
-  let remainder = text;
+  let remainder      = text;
   let extractedEmail = "";
   let extractedId    = "";
 
   const emailMatch = remainder.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
   if (emailMatch) {
     extractedEmail = emailMatch[1];
-    remainder = remainder.replace(extractedEmail, "").trim();
+    remainder      = remainder.replace(extractedEmail, "").trim();
   }
 
   const idMatch = remainder.match(/\b(\d{4,}-?\d{2,}|\d{6,})\b/);
@@ -88,11 +74,7 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
   }
 
   const cleanName = remainder.replace(/^[,\-\s]+|[,\-\s]+$/g, "").trim();
-
-  // Accept if we have either name OR email
-  if (!cleanName && !extractedEmail) {
-    return null;
-  }
+  if (!cleanName && !extractedEmail) return null;
 
   return {
     id:         extractedId,
@@ -104,25 +86,18 @@ function parseBarcodeText(raw: string): ScannedStudent | null {
 }
 
 // ── DB-enrichment wrapper ─────────────────────────────────────────────────────
-/**
- * If a useFetchStudent hook is provided, this component fires it with the
- * scanned student ID, then merges DB data onto the parsed scan result.
- * Falls back gracefully if the student isn't found or hook isn't provided.
- */
 function useEnrichedStudent(
   parsed: ScannedStudent | null,
   useFetchStudent?: Props["useFetchStudent"],
 ): { student: ScannedStudent | null; isEnriching: boolean } {
-  // Always call the hook (rules of hooks) — skip with empty string if no parsed id
-  const hookResult = useFetchStudent?.(parsed?.id ?? "");
-  const dbData     = hookResult?.data;
+  const hookResult  = useFetchStudent?.(parsed?.id ?? "");
+  const dbData      = hookResult?.data;
   const isEnriching = (hookResult?.isFetching ?? false) && !!parsed?.id;
 
   if (!parsed) return { student: null, isEnriching: false };
 
   if (dbData) {
-    // Merge: DB data wins for email/department if barcode didn't have them
-    const dbStudent = dbData?.data ?? dbData; // handle { data: {...} } wrapper
+    const dbStudent = dbData?.data ?? dbData;
     return {
       student: {
         ...parsed,
@@ -134,32 +109,23 @@ function useEnrichedStudent(
     };
   }
 
-  // If we have a name but no DB data yet, we can't do much more here without a name-based hook.
-  // But we can ensure name is updated from the parsed scan result.
   return {
-    student: {
-      ...parsed,
-      email: parsed.email || autoEmail(parsed.id),
-    },
+    student:     { ...parsed, email: parsed.email || autoEmail(parsed.id) },
     isEnriching,
   };
 }
 
 // ── Scan result card ──────────────────────────────────────────────────────────
 function ScanResultCard({
-  student,
-  isEnriching,
-  onConfirm,
-  onRescan,
+  student, isEnriching, onConfirm, onRescan,
 }: {
-  student: ScannedStudent;
+  student:     ScannedStudent;
   isEnriching: boolean;
-  onConfirm: () => void;
-  onRescan:  () => void;
+  onConfirm:   () => void;
+  onRescan:    () => void;
 }) {
   return (
     <div className="flex flex-col items-center py-2 animate-fadeIn">
-      {/* Icon ring with glow */}
       <div className="relative mb-6">
         <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full" />
         <div className="relative w-24 h-24 rounded-full bg-emerald-500/10 border-2 border-emerald-500/30 flex items-center justify-center shadow-inner">
@@ -168,8 +134,7 @@ function ScanResultCard({
         <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-emerald-500 border-4 border-gray-900 flex items-center justify-center shadow-lg">
           {isEnriching
             ? <FaSpinner size={12} className="text-white animate-spin" />
-            : <FaCheck   size={12} className="text-white" />
-          }
+            : <FaCheck   size={12} className="text-white" />}
         </div>
       </div>
 
@@ -186,7 +151,6 @@ function ScanResultCard({
         )}
       </div>
 
-      {/* Info Sections */}
       <div className="w-full space-y-3 mb-8">
         {student.department && (
           <div className="group relative overflow-hidden px-4 py-3 rounded-2xl bg-white/5 border border-white/10 hover:border-blue-500/30 transition-all duration-300">
@@ -195,7 +159,6 @@ function ScanResultCard({
             <p className="text-sm font-semibold text-blue-300 relative z-10 break-words">{student.department}</p>
           </div>
         )}
-        
         <div className="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
           <div className="min-w-0">
             <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Email Address</p>
@@ -204,12 +167,13 @@ function ScanResultCard({
             </p>
           </div>
           {student.email?.endsWith(`@${EMAIL_DOMAIN}`) && (
-            <span className="shrink-0 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-bold text-gray-600 uppercase">Auto</span>
+            <span className="shrink-0 px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[9px] font-bold text-gray-600 uppercase">
+              Auto
+            </span>
           )}
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-3 w-full">
         <button
           onClick={onRescan}
@@ -224,8 +188,7 @@ function ScanResultCard({
         >
           {isEnriching
             ? <><FaSpinner size={10} className="animate-spin" /> Confirming…</>
-            : <><FaCheck   size={10} /> Use Student</>
-          }
+            : <><FaCheck   size={10} /> Use Student</>}
         </button>
       </div>
     </div>
@@ -234,10 +197,13 @@ function ScanResultCard({
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }: Props) {
-  const videoRef  = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<any>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const isDecodingRef = useRef(false);
+  const videoRef      = useRef<HTMLVideoElement>(null);
+  const canvasRef     = useRef<HTMLCanvasElement>(null);
+  const streamRef     = useRef<MediaStream | null>(null);
+  const rafRef        = useRef<number | null>(null);
+  const isActiveRef   = useRef(false);
+  const isStartingRef = useRef(false);
+  const detectorRef   = useRef<any>(null);
 
   const [phase,      setPhase]      = useState<"scanning" | "result" | "error">("scanning");
   const [parsed,     setParsed]     = useState<ScannedStudent | null>(null);
@@ -245,23 +211,18 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
   const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
   const [scanning,   setScanning]   = useState(false);
 
-  // Enrich parsed scan with DB data (or auto-email fallback)
   const { student: scanned, isEnriching } = useEnrichedStudent(parsed, useFetchStudent);
 
-  // ── Stop camera & decoder ──────────────────────────────────────────────────
+  // ── Full stop ──────────────────────────────────────────────────────────────
   const stopAll = useCallback(() => {
-    isDecodingRef.current = false;
-    try { 
-      if (readerRef.current) {
-        readerRef.current.reset();
-        readerRef.current = null;
-      }
-    } catch { /* ignore */ }
+    isActiveRef.current   = false;
+    isStartingRef.current = false;
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => {
-        t.stop();
-        streamRef.current?.removeTrack(t);
-      });
+      streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -269,66 +230,123 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
     }
   }, []);
 
-  // ── Start ZXing decode loop ────────────────────────────────────────────────
+  // ── Build or reuse BarcodeDetector ────────────────────────────────────────
+  const getDetector = useCallback(async () => {
+    if (detectorRef.current) return detectorRef.current;
+
+    // Native BarcodeDetector — hardware-accelerated, available on Chrome/Android/Safari 17+
+    if ("BarcodeDetector" in window) {
+      const supported = await (window as any).BarcodeDetector.getSupportedFormats();
+      detectorRef.current = new (window as any).BarcodeDetector({ formats: supported });
+      return detectorRef.current;
+    }
+
+    // Polyfill for Firefox / older browsers
+    const { BarcodeDetector } = await import("barcode-detector");
+    detectorRef.current = new BarcodeDetector({
+      formats: ["code_128", "code_39", "ean_13", "ean_8", "qr_code", "data_matrix"],
+    });
+    return detectorRef.current;
+  }, []);
+
+  // ── Start camera + decode loop ─────────────────────────────────────────────
   const startDecoding = useCallback(async (mode?: "environment" | "user") => {
-    if (!videoRef.current || isDecodingRef.current) return;
-    
-    isDecodingRef.current = true;
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+    isActiveRef.current   = false;
     setScanning(false);
 
+    if (rafRef.current)    { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
+    if (videoRef.current)  { videoRef.current.srcObject = null; videoRef.current.load(); }
+
+    await new Promise(r => setTimeout(r, 200));
+
     try {
-      const { BrowserMultiFormatReader, NotFoundException } = await import(
-        /* webpackChunkName: "zxing" */
-        "@zxing/library"
-      );
-
-      stopAll();
-      
-      // Wait a bit for cleanup
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const reader = new BrowserMultiFormatReader();
-      readerRef.current = reader;
+      const detector   = await getDetector();
       const targetMode = mode ?? facingMode;
 
-      const constraints = {
+      const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: targetMode,
-        }
-      };
+          width:      { ideal: 1920 },
+          height:     { ideal: 1080 },
+        },
+      });
 
-      await reader.decodeFromConstraints(
-        constraints,
-        videoRef.current,
-        (result: any, err: any) => {
-          if (!isDecodingRef.current) return;
-          
-          setScanning(true);
-          if (result) {
-            const raw = result.getText();
-            const student = parseBarcodeText(raw);
-            if (student) {
-              stopAll();
-              setParsed(student);
-              setPhase("result");
+      if (!videoRef.current) {
+        stream.getTracks().forEach(t => t.stop());
+        isStartingRef.current = false;
+        return;
+      }
+
+      streamRef.current          = stream;
+      videoRef.current.srcObject = stream;
+
+      await new Promise<void>((resolve, reject) => {
+        if (!videoRef.current) return reject();
+        videoRef.current.onloadedmetadata = () => resolve();
+        videoRef.current.onerror          = () => reject(new Error("Video error"));
+      });
+
+      await videoRef.current.play();
+
+      isActiveRef.current   = true;
+      isStartingRef.current = false;
+      setScanning(true);
+
+      // ── rAF decode loop — runs every 150ms, hardware-accelerated ──────────
+      let lastDetect = 0;
+      const INTERVAL = 150;
+
+      const tick = async (now: number) => {
+        if (!isActiveRef.current) return;
+
+        if (now - lastDetect >= INTERVAL) {
+          lastDetect = now;
+          const video  = videoRef.current;
+          const canvas = canvasRef.current;
+
+          if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width  = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              try {
+                const results = await detector.detect(canvas);
+                if (results.length > 0 && isActiveRef.current) {
+                  const raw     = results[0].rawValue;
+                  const student = parseBarcodeText(raw);
+                  if (student) {
+                    isActiveRef.current = false;
+                    stopAll();
+                    setParsed(student);
+                    setPhase("result");
+                    return;
+                  }
+                }
+              } catch { /* frame failed, keep going */ }
             }
           }
-          if (err && !(err instanceof NotFoundException)) {
-            console.warn("[Scanner]", err);
-          }
         }
-      );
+
+        rafRef.current = requestAnimationFrame(tick);
+      };
+
+      rafRef.current = requestAnimationFrame(tick);
+
     } catch (e: any) {
-      console.error("[Scanner] Init error", e);
+      isStartingRef.current = false;
+      isActiveRef.current   = false;
       setErrorMsg(
-        e?.message?.includes("Permission")
+        e?.name === "NotAllowedError" || e?.message?.includes("Permission")
           ? "Camera permission denied. Please allow camera access and try again."
           : e?.message ?? "Unable to start the camera."
       );
       setPhase("error");
-      isDecodingRef.current = false;
     }
-  }, [facingMode, stopAll]);
+  }, [facingMode, getDetector, stopAll]);
 
   useEffect(() => {
     startDecoding();
@@ -372,7 +390,7 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
             </div>
             <div>
               <h3 className="text-sm font-bold text-white">Scan Student ID</h3>
-              <p className="text-[10px] text-gray-500">Point camera at barcode or QR code</p>
+              <p className="text-[10px] text-gray-500">Use back camera for best results</p>
             </div>
           </div>
           <button
@@ -385,19 +403,17 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
 
         {/* Body */}
         <div className="p-5">
-
-          {/* Scanning phase */}
           {phase === "scanning" && (
             <div className="space-y-4">
               <div className="relative bg-black rounded-2xl overflow-hidden aspect-[3/4] sm:aspect-video flex items-center justify-center">
-                <video 
-                  ref={videoRef} 
-                  className="w-full h-full object-cover" 
-                  muted 
-                  playsInline 
-                  autoPlay
-                  onPlay={() => console.log('Video playing successfully')}
-                  onError={(e) => console.error('Video error:', e)}
+                {/* Hidden canvas for frame capture */}
+                <canvas ref={canvasRef} className="hidden" />
+
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  muted
+                  playsInline
                 />
 
                 {scanning && (
@@ -410,7 +426,7 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
                         <div
                           className="absolute left-2 right-2 h-px bg-blue-400/70"
                           style={{
-                            animation: "scanline 1s ease-in-out infinite",
+                            animation: "scanline 1.2s ease-in-out infinite",
                             boxShadow: "0 0 8px 2px rgba(96,165,250,0.4)",
                           }}
                         />
@@ -431,7 +447,7 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
               </div>
 
               <p className="text-center text-gray-600 text-xs">
-                Align the student ID barcode within the frame
+                Hold the barcode steady within the frame
               </p>
 
               <div className="flex gap-3">
@@ -447,15 +463,13 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
                   >
                     {mode === "environment"
                       ? <><FaCamera size={10} /> Back Cam</>
-                      : <><FaUserCheck size={10} /> Front Cam</>
-                    }
+                      : <><FaUserCheck size={10} /> Front Cam</>}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Result phase */}
           {phase === "result" && scanned && (
             <ScanResultCard
               student={scanned}
@@ -465,7 +479,6 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
             />
           )}
 
-          {/* Error phase */}
           {phase === "error" && (
             <div className="flex flex-col items-center gap-4 py-6 text-center">
               <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
@@ -488,9 +501,9 @@ export default function BarcodeScannerModal({ onScan, onClose, useFetchStudent }
 
       <style>{`
         @keyframes scanline {
-          0%   { top: 8px;  opacity: 1; }
+          0%   { top: 8px; opacity: 1; }
           50%  { top: calc(100% - 8px); opacity: 0.7; }
-          100% { top: 8px;  opacity: 1; }
+          100% { top: 8px; opacity: 1; }
         }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(8px); }
